@@ -269,8 +269,8 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 .pricing-card .price-period { font-size:0.9rem; color:var(--text-muted); }
 .pricing-card h3 { font-family:'Poppins',sans-serif; color:var(--text-primary); margin-bottom:0.5rem; }
 .pricing-card ul { list-style:none; padding:0; margin:1.5rem 0; text-align:left; }
-.pricing-card ul li { padding:0.5rem 0; color:var(--text-secondary); font-size:0.9rem; border-bottom:1px solid var(--card-border); }
-.pricing-card ul li::before { content:'\2713'; color:var(--success); font-weight:700; margin-right:0.5rem; }
+.pricing-card ul li { padding:0.5rem 0; color:var(--text-secondary); font-size:0.9rem; border-bottom:1px solid var(--card-border); display:flex; align-items:center; gap:0.5rem; }
+.pricing-card ul li::before { content:'\2713'; color:var(--success); font-weight:700; flex-shrink:0; width:1.2em; text-align:center; line-height:1; }
 
 .testimonial-card {
     background:var(--card-bg); border-radius:16px; padding:2rem; box-shadow:0 4px 20px var(--card-shadow);
@@ -2056,7 +2056,7 @@ else:
         else:
             total = len(candidates)
             p_ats = sum(1 for c in candidates.values() if (c.get("ats_result") or {}).get("decision") == "PASS")
-            p_ass = sum(1 for c in candidates.values() if c and (c.get("assessment_result") or {}).get("decision") == "PASS")
+            p_ass = sum(1 for c in candidates.values() if c and (c.get("assessment_result") or {}).get("decision") == "PASS"))
             ivw = sum(1 for c in candidates.values() if c.get("interview_scheduled"))
             c1, c2, c3, c4 = st.columns(4)
             with c1: st.markdown(f'<div class="stat-card stat-blue"><div class="stat-value">{total}</div><div class="stat-label">Total</div></div>', unsafe_allow_html=True)
