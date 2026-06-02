@@ -1352,13 +1352,25 @@ Best regards,
 {recruiter_name}"""
 
 
+def generate_strong_password(length=12):
+    """Generate a strong random password."""
+    alphabet = string.ascii_letters + string.digits + "!@#$%&*"
+    while True:
+        password = ''.join(secrets.choice(alphabet) for _ in range(length))
+        if (any(c.islower() for c in password)
+                and any(c.isupper() for c in password)
+                and any(c.isdigit() for c in password)
+                and any(c in "!@#$%&*" for c in password)):
+            return password
+
+
 def generate_assessment_email(candidate_name, role, deadline, recruiter_name, candidate_id=None):
     # Generate a unique token and map it to the candidate
     token = hashlib.md5(f"{candidate_name}_{candidate_id}_{datetime.now().isoformat()}".encode()).hexdigest()[:16]
     if candidate_id:
         st.session_state.assessment_tokens[token] = candidate_id
     # Link points to the running Streamlit app
-    link = f"http://localhost:8501/?assess={token}"
+    link = f"https://recruitmentagent-1.streamlit.app/?assess={token}"
 
     # Generate strong credentials for the candidate
     assess_username = candidate_name.lower().replace(" ", ".") + f".{random.randint(100,999)}"
