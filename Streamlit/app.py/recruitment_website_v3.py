@@ -428,9 +428,9 @@ def render_landing_page():
         <div style="position:relative; z-index:1;">
             <div style="font-size:0.85rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase;
                  color:#A5B4FC; margin-bottom:1rem;">AI-POWERED RECRUITMENT AUTOMATION</div>
-            <h1>AI Recruitment<br>Screening Agent</h1>
+            <h1>Talent Hunt<br>Screening Agent</h1>
             <p>Automate candidate screening, assessments, and communications with our intelligent
-            recruitment agent. Save time, reduce bias, and hire the best talent faster.</p>
+            recruitment agent. Save Time, Reduce Bias, and Hire the Best Talent Faster.</p>
             <div style="margin-top:1.5rem;">
                 <span style="color:#A7F3D0; font-size:0.85rem; margin-right:2rem;">\u2705 No Credit Card Required</span>
                 <span style="color:#A7F3D0; font-size:0.85rem; margin-right:2rem;">\u2705 Secure & Compliant</span>
@@ -542,7 +542,7 @@ def render_landing_page():
 
     t1, t2, t3 = st.columns(3)
     testimonials = [
-        ("We reduced our screening time by 80%%. The AI scoring is incredibly accurate and fair.", "Priya Sharma", "Head of Talent, TechCorp"),
+        ("We reduced our screening time by 80%%. The AI scoring is incredibly accurate and fair.", "Mena Suresh", "Head of Talentless, TechCorp"),
         ("The automated email workflows saved us countless hours. Candidates love the seamless experience.", "James Chen", "HR Director, DataFlow Inc"),
         ("Finally a recruitment tool that is transparent and explainable. The audit logs are a game changer.", "Sarah Kim", "VP People, StartupXYZ"),
     ]
@@ -1294,7 +1294,7 @@ def score_assessment(questions, answers):
 
 def get_panel_availability(role):
     panels = {
-        "Data Engineer": [{"name": "Priya Sharma", "title": "Senior Data Engineer"}, {"name": "James Chen", "title": "Data Engineering Manager"}],
+        "Data Engineer": [{"name": "Mena Suresh", "title": "Senior Data Engineer"}, {"name": "James Chen", "title": "Data Engineering Manager"}],
         "Software Engineer": [{"name": "Alex Rivera", "title": "Staff Software Engineer"}, {"name": "Sarah Kim", "title": "Engineering Manager"}],
         "Data Analyst": [{"name": "Michael Brown", "title": "Lead Data Analyst"}, {"name": "Emily Zhang", "title": "Analytics Manager"}],
         "DevOps Engineer": [{"name": "Raj Patel", "title": "Senior DevOps Engineer"}, {"name": "Lisa Johnson", "title": "Platform Engineering Lead"}],
@@ -2056,7 +2056,7 @@ else:
         else:
             total = len(candidates)
             p_ats = sum(1 for c in candidates.values() if (c.get("ats_result") or {}).get("decision") == "PASS")
-            p_ass = sum(1 for c in candidates.values() if c and (c.get("assessment_result") or {}).get("decision") == "PASS"))
+            p_ass = sum(1 for c in candidates.values() if c and (c.get("assessment_result") or {}).get("decision") == "PASS")
             ivw = sum(1 for c in candidates.values() if c.get("interview_scheduled"))
             c1, c2, c3, c4 = st.columns(4)
             with c1: st.markdown(f'<div class="stat-card stat-blue"><div class="stat-value">{total}</div><div class="stat-label">Total</div></div>', unsafe_allow_html=True)
