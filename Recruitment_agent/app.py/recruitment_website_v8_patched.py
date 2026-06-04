@@ -1573,7 +1573,9 @@ def generate_assessment_email(candidate_name, role, deadline, recruiter_name, ca
     if candidate_id:
         st.session_state.assessment_tokens[token] = candidate_id
     # Link points to the running Streamlit app
-    link = f"http://localhost:8501/?assess={token}"
+    app_host = st.context.headers.get("Host", "localhost:8501")
+    protocol = "https" if "streamlit.app" in app_host else "http"
+    link = f"{protocol}://{app_host}/?assess={token}"
 
     # Generate strong credentials for the candidate
     assess_username = candidate_name.lower().replace(" ", ".") + f".{random.randint(100,999)}"
