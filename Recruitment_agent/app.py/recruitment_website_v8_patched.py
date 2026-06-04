@@ -131,6 +131,10 @@ defaults = {
     "email_log": [],
     "assessment_tokens": {},
     "_arrived_via_link": False,
+    "assessment_credentials": {},
+    "_assess_token": None,
+    "_candidate_authenticated": False,
+    "_candidate_cid": None,
     # Authentication
     "authenticated": False,
     "current_user": None,
@@ -397,14 +401,24 @@ inject_css()
 # ─────────────────────────────────────────────
 # ASSESSMENT LINK HANDLER
 # ─────────────────────────────────────────────
+# ─────────────────────────────────────────────
+# ASSESSMENT LINK HANDLER
+# ─────────────────────────────────────────────
 _query_assess_token = st.query_params.get("assess", None)
-if _query_assess_token and _query_assess_token in st.session_state.assessment_tokens:
-    _linked_cid = st.session_state.assessment_tokens[_query_assess_token]
-    if _linked_cid in st.session_state.candidates:
-        st.session_state.current_candidate_id = _linked_cid
-        st.session_state["_arrived_via_link"] = True
-        st.session_state.authenticated = True
+if _query_assess_token:
+    # Don't auto-authenticate — show candidate login instead
+    if not st.session_state.get("_candidate_authenticated"):
+        st.session_state["_assess_token"] = _query_assess_token
         st.session_state.show_landing = False
+
+    # If candidate already authenticated via their credentials, proceed
+    if st.session_state.get("_candidate_authenticated"):
+        _linked_cid = st.session_state.get("_candidate_cid")
+        if _linked_cid and _linked_cid in st.session_state.candidates:
+            st.session_state.current_candidate_id = _linked_cid
+            st.session_state["_arrived_via_link"] = True
+            st.session_state.authenticated = True
+            st.session_state.show_landing = False
 
 # ─────────────────────────────────────────────
 # HELPER: FOOTER
@@ -1595,6 +1609,17 @@ def generate_assessment_email(candidate_name, role, deadline, recruiter_name, ca
             "role": "candidate",
         }
 
+    # ═══ ADD THIS BLOCK RIGHT HERE ═══
+    if "assessment_credentials" not in st.session_state:
+        st.session_state["assessment_credentials"] = {}
+    st.session_state["assessment_credentials"][token] = {
+        "username": assess_username,
+        "password": assess_password,
+        "candidate_id": candidate_id,
+        "candidate_name": candidate_name,
+    }
+    # ═══ END OF NEW BLOCK ═══
+
     return f"""Subject: Next Step: Assessment for {role}
 
 Dear {candidate_name},
@@ -1846,8 +1871,46 @@ def show_automation_results(actions):
 # ═════════════════════════════════════════════
 
 # Gate 1: Landing page
+# Gate 1: Landing page
 if st.session_state.show_landing and not st.session_state.authenticated:
     render_landing_page()
+
+# Gate 1.5: Candidate Assessment Login (when arriving via email link)
+elif st.session_state.get("_assess_token") and not st.session_state.get("_candidate_authenticated") and not st.session_state.authenticated:
+    _token = st.session_state["_assess_token"]
+    _creds = st.session_state.get("assessment_credentials", {}).get(_token)
+
+    st.markdown("""
+    <div style="text-align:center; margin: 2rem 0;">
+        <span style="font-size:3rem;">📝</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 1.2, 1])
+    with col2:
+        st.markdown("## 📝 Candidate Assessment Login")
+        st.markdown("Enter the credentials from your assessment invitation email.")
+
+        c_user = st.text_input("Username", placeholder="Enter username from email", key="cand_login_user")
+        c_pass = st.text_input("Password", type="password", placeholder="Enter password from email", key="cand_login_pass")
+
+        if st.button("🚀 Start Assessment", type="primary", use_container_width=True, key="cand_login_btn"):
+            if _creds and c_user == _creds["username"] and c_pass == _creds["password"]:
+                st.session_state["_candidate_authenticated"] = True
+                st.session_state["_candidate_cid"] = _creds["candidate_id"]
+                st.session_state.authenticated = True
+                st.session_state.show_landing = False
+                st.session_state["_arrived_via_link"] = True
+                st.session_state.current_candidate_id = _creds["candidate_id"]
+                st.success(f"✅ Welcome, {_creds['candidate_name']}! Loading your assessment...")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("❌ Invalid credentials. Please check the username and password from your email.")
+
+        st.markdown("---")
+        st.caption("If you're having trouble, please contact the recruitment team.")
+
 
 # Gate 2: Login
 elif not st.session_state.authenticated:
