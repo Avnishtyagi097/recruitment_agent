@@ -271,7 +271,12 @@ def get_email_logs():
     c = _conn()
     rows = c.execute("SELECT * FROM email_logs ORDER BY id DESC").fetchall()
     c.close()
-    return [dict(r) for r in rows]
+    results = []
+    for r in rows:
+        d = dict(r)
+        d["to"] = d.pop("to_addr", "")  # Rename to match session_state format
+        results.append(d)
+    return results
 
 
 # ═══════════════════════════════════════════
