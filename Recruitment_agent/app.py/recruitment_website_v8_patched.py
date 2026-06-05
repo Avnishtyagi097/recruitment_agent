@@ -36,8 +36,21 @@ def init_auth_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    
+conn.execute("""
+        CREATE TABLE IF NOT EXISTS assessment_credentials (
+            token TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            password TEXT NOT NULL,
+            candidate_id TEXT NOT NULL,
+            candidate_name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    # ═══ END ═══
     conn.commit()
     conn.close()
+
 
 def _hash_pw(password, salt=None):
     import secrets as _sec
@@ -1610,14 +1623,25 @@ def generate_assessment_email(candidate_name, role, deadline, recruiter_name, ca
         }
 
     # ═══ ADD THIS BLOCK RIGHT HERE ═══
-    if "assessment_credentials" not in st.session_state:
-        st.session_state["assessment_credentials"] = {}
-    st.session_state["assessment_credentials"][token] = {
-        "username": assess_username,
-        "password": assess_password,
-        "candidate_id": candidate_id,
-        "candidate_name": candidate_name,
-    }
+    # if "assessment_credentials" not in st.session_state:
+    #     st.session_state["assessment_credentials"] = {}
+    # st.session_state["assessment_credentials"][token] = {
+    #     "username": assess_username,
+    #     "password": assess_password,
+    #     "candidate_id": candidate_id,
+    #     "candidate_name": candidate_name,
+    # }
+    # Store credentials in SQLite (persists across all sessions)
+    try:
+        conn = sqlite3.connect(AUTH_DB)
+        conn.execute(
+            "INSERT OR REPLACE INTO assessment_credentials (token, username, password, candidate_id, candidate_name) VALUES (?,?,?,?,?)",
+            (token, assess_username, assess_password, candidate_id, candidate_name)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[DB] Error storing assessment credentials: {e}")
     # ═══ END OF NEW BLOCK ═══
 
     return f"""Subject: Next Step: Assessment for {role}
@@ -1878,7 +1902,24 @@ if st.session_state.show_landing and not st.session_state.authenticated:
 # Gate 1.5: Candidate Assessment Login (when arriving via email link)
 elif st.session_state.get("_assess_token") and not st.session_state.get("_candidate_authenticated") and not st.session_state.authenticated:
     _token = st.session_state["_assess_token"]
-    _creds = st.session_state.get("assessment_credentials", {}).get(_token)
+    # _creds = st.session_state.get("assessment_credentials", {}).get(_token)
+    # Look up credentials from SQLite (shared across all sessions)
+    _creds = None
+    try:
+        conn = sqlite3.connect(AUTH_DB)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT * FROM assessment_credentials WHERE token = ?", (_token,)).fetchone()
+        conn.close()
+        if row:
+            _creds = {
+                "username": row["username"],
+                "password": row["password"],
+                "candidate_id": row["candidate_id"],
+                "candidate_name": row["candidate_name"],
+            }
+    except Exception:
+        _creds = None
+
 
     st.markdown("""
     <div style="text-align:center; margin: 2rem 0;">
