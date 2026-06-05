@@ -16,7 +16,7 @@ import json
 import os
 from datetime import datetime
 
-DB_FILE = "recruitment_data.db"
+DB_FILE = "recruitment_users.db"
 
 
 def _conn():
