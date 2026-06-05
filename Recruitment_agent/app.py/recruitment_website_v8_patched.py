@@ -7,6 +7,7 @@ import secrets
 import string
 import smtplib
 import pandas as pd
+import db_manager as db
 import time
 import base64
 from datetime import datetime, timedelta
@@ -210,6 +211,8 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 init_auth_db()
+db.init()
+db.sync_candidates_to_session(st.session_state)
 
 # ─────────────────────────────────────────────
 # DYNAMIC CSS THEME (Dark / Light)
@@ -773,6 +776,7 @@ def log_email(to_email, subject, email_type, status, detail):
         "detail": detail,
     }
     st.session_state.email_log.append(entry)
+    db.save_email_log(entry) 
     return entry
 
 
@@ -1239,6 +1243,7 @@ def add_log(candidate_id, stage, decision, score, reason, next_action, owner="AI
         "reason": reason, "next_action": next_action, "owner": owner,
     }
     st.session_state.pipeline_logs.append(entry)
+    db.save_log(entry)
     return entry
 
 
@@ -1912,7 +1917,8 @@ def render_analytics_page():
 
     with col6:
         st.markdown('<div class="analytics-chart-card"><h4>\U0001f4e7 Email Automation Stats</h4>', unsafe_allow_html=True)
-        email_log = st.session_state.email_log
+        # email_log = st.session_state.email_log
+        email_log = db.get_email_logs()  # Load from SQLite
         if email_log:
             sent = sum(1 for e in email_log if e["status"] == "SENT")
             failed = sum(1 for e in email_log if e["status"] == "FAILED")
@@ -2338,6 +2344,7 @@ else:
                             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         }
                         st.session_state.candidates[c_id] = candidate_data
+                        db.save_candidate(candidate_data)
                         st.session_state.current_candidate_id = c_id
                         score = result["ats_score"]; dec = result["decision"]
                         circ_class = "pass" if dec == "PASS" else ("review" if result["requires_human_review"] else "fail")
@@ -2379,6 +2386,7 @@ else:
                                 actions = auto_pipeline_action(candidate_data, "ats_pass")
                             candidate_data["status"] = "Assessment Sent"
                             st.session_state.candidates[c_id] = candidate_data
+                            db.save_candidate(candidate_data)
                             show_automation_results(actions)
                             st.info("👉 Navigate to **📝 Assessment** page to proceed.")
                         elif result["requires_human_review"]:
@@ -2395,6 +2403,7 @@ else:
                                     with st.spinner("⚡ Sending assessment invitation..."):
                                         actions = auto_pipeline_action(candidate_data, "ats_pass")
                                     st.session_state.candidates[c_id] = candidate_data
+                                    db.save_candidate(candidate_data)
                                     show_automation_results(actions)
                                     st.success("✅ Candidate approved! Assessment invitation sent.")
                             with rev_c2:
@@ -2405,6 +2414,7 @@ else:
                                     with st.spinner("⚡ Sending rejection..."):
                                         actions = auto_pipeline_action(candidate_data, "ats_fail")
                                     st.session_state.candidates[c_id] = candidate_data
+                                    db.save_candidate(candidate_data)
                                     show_automation_results(actions)
                                     st.error("❌ Candidate rejected. Rejection email sent.")
                         else:
@@ -2412,6 +2422,7 @@ else:
                             with st.spinner("⚡ Sending rejection..."):
                                 actions = auto_pipeline_action(candidate_data, "ats_fail")
                             st.session_state.candidates[c_id] = candidate_data
+                            db.save_candidate(candidate_data)
                             show_automation_results(actions)
 
         # ────── BATCH UPLOAD MODE ──────
@@ -2500,6 +2511,7 @@ else:
                                 email_status = "Sent" if any(a["status"] == "SENT" for a in actions) else "Queued"
                             else: email_status = "No email"
                         st.session_state.candidates[c_id] = candidate_data
+                        db.save_candidate(candidate_data)
                         results_list.append({"file": cv_file.name, "name": det_name, "email": det_email or "—", "ats_score": result["ats_score"], "decision": dec, "status": candidate_data["status"], "email_status": email_status, "id": c_id})
                     progress_bar.progress(1.0, text="✅ All CVs processed!")
                     st.markdown("---")
@@ -2684,7 +2696,8 @@ else:
     # ═════════════════════════════════════════════
     elif page == "\U0001f4cb Pipeline Logs":
         st.markdown("""<div class="hero-banner animate-in"><h1>\U0001f4cb Pipeline Logs</h1><p>Full audit trail of all decisions</p></div>""", unsafe_allow_html=True)
-        logs = st.session_state.pipeline_logs
+        # logs = st.session_state.pipeline_logs
+        logs = db.get_logs()  # Load from SQLite
         if not logs: st.info("No logs yet.")
         else:
             all_cids = list(set(l["candidate_id"] for l in logs))
@@ -2704,7 +2717,8 @@ else:
     # ═════════════════════════════════════════════
     elif page == "\U0001f4e7 Email Log":
         st.markdown("""<div class="hero-banner animate-in"><h1>\U0001f4e7 Email Log</h1><p>Track all automated emails</p></div>""", unsafe_allow_html=True)
-        email_log = st.session_state.email_log
+        # email_log = st.session_state.email_log
+        email_log = db.get_email_logs()  # Load from SQLite
         if not email_log: st.info("No emails yet.")
         else:
             total = len(email_log)
