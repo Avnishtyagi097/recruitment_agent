@@ -2735,7 +2735,7 @@ else:
             fe = email_log if sf == "All" else [e for e in email_log if e["status"] == sf]
             for em in fe:
                 tl = {"SENT": "timeline-sent", "FAILED": "timeline-failed", "QUEUED": "timeline-queued"}.get(em["status"], "")
-                st.markdown(f'<div class="timeline-item {tl}"><strong>{em["type"]}</strong> \u2192 {em["to"]}<br><small>{em["timestamp"]} — <strong>{em["status"]}</strong></small></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="timeline-item {tl}"><strong>{em["type"]}</strong> \u2192 {em.get("to") or em.get("to_addr", "")}<br><small>{em["timestamp"]} — <strong>{em["status"]}</strong></small></div>', unsafe_allow_html=True)
             st.dataframe(pd.DataFrame(fe), use_container_width=True, hide_index=True)
             st.download_button("\U0001f4e5 Download", json.dumps(email_log, indent=2), f"emails_{datetime.now().strftime('%Y%m%d')}.json", "application/json")
         render_footer()
