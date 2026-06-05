@@ -37,7 +37,7 @@ def init_auth_db():
         )
     """)
     
-conn.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS assessment_credentials (
             token TEXT PRIMARY KEY,
             username TEXT NOT NULL,
