@@ -47,6 +47,20 @@ def init_auth_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS candidate_assessments (
+            candidate_id TEXT PRIMARY KEY,
+            candidate_name TEXT NOT NULL,
+            candidate_email TEXT,
+            role TEXT,
+            ats_score REAL,
+            ats_decision TEXT,
+            assessment_data TEXT,
+            status TEXT DEFAULT 'Assessment Sent',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     # ═══ END ═══
     conn.commit()
     conn.close()
@@ -96,6 +110,40 @@ def db_get_user_count():
     count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     conn.close()
     return count
+
+def db_save_candidate_for_assessment(candidate_id, cand_data):
+    """Save candidate info to SQLite so candidate's session can access it."""
+    conn = sqlite3.connect(AUTH_DB)
+    conn.execute(
+        "INSERT OR REPLACE INTO candidate_assessments (candidate_id, candidate_name, candidate_email, role, ats_score, ats_decision, status) VALUES (?,?,?,?,?,?,?)",
+        (candidate_id, cand_data.get("name",""), cand_data.get("email",""),
+         cand_data.get("role",""), cand_data.get("ats_result",{}).get("ats_score",0),
+         cand_data.get("ats_result",{}).get("decision",""), cand_data.get("status",""))
+    )
+    conn.commit()
+    conn.close()
+
+
+def db_get_candidate_assessment(candidate_id):
+    """Get candidate info from SQLite."""
+    conn = sqlite3.connect(AUTH_DB)
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT * FROM candidate_assessments WHERE candidate_id = ?", (candidate_id,)).fetchone()
+    conn.close()
+    if row:
+        return dict(row)
+    return None
+
+
+def db_save_assessment_result(candidate_id, result_json, status):
+    """Save assessment result to SQLite."""
+    conn = sqlite3.connect(AUTH_DB)
+    conn.execute(
+        "UPDATE candidate_assessments SET assessment_data = ?, status = ? WHERE candidate_id = ?",
+        (result_json, status, candidate_id)
+    )
+    conn.commit()
+    conn.close()    
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -784,6 +832,12 @@ def auto_pipeline_action(candidate_data, action_type):
         if recruiter_email:
             ok2, msg2, status2 = send_and_log(recruiter_email, r_subj, r_body, "ATS Pass → Recruiter Notification")
             actions.append({"action": "Recruiter notification (ATS PASS)", "to": recruiter_email, "status": status2, "detail": msg2})
+            
+        try:
+            db_save_candidate_for_assessment(candidate_data.get("id",""), candidate_data)
+        except Exception:
+            pass
+
 
     elif action_type == "assessment_fail":
         subj = f"Update on Your Application for {role}"
@@ -1976,8 +2030,30 @@ else:
 
     # ═══ CANDIDATE-ONLY ASSESSMENT MODE ═══
     if st.session_state.get("_candidate_mode"):
+        # cid = st.session_state.get("_candidate_cid")
+        # cand = st.session_state.candidates.get(cid, {}) if cid else {}
+
+        # if not cand:
+        #     st.error("❌ Assessment not found. Please contact the recruitment team.")
+        #     st.stop()
         cid = st.session_state.get("_candidate_cid")
         cand = st.session_state.candidates.get(cid, {}) if cid else {}
+
+        # If not in session_state, load from SQLite (cross-session support)
+        if not cand and cid:
+            db_cand = db_get_candidate_assessment(cid)
+            if db_cand:
+                cand = {
+                    "id": cid,
+                    "name": db_cand["candidate_name"],
+                    "email": db_cand["candidate_email"],
+                    "role": db_cand["role"],
+                    "ats_result": {"ats_score": db_cand["ats_score"], "decision": db_cand["ats_decision"]},
+                    "status": db_cand["status"],
+                    "assessment_result": json.loads(db_cand["assessment_data"]) if db_cand["assessment_data"] else None,
+                    "emails_sent": [],
+                }
+                st.session_state.candidates[cid] = cand
 
         if not cand:
             st.error("❌ Assessment not found. Please contact the recruitment team.")
@@ -2043,6 +2119,13 @@ else:
                 cand["assessment_result"] = result
                 cand["status"] = "Passed Assessment" if decision == "PASS" else "Failed Assessment"
                 st.session_state.candidates[cid] = cand
+                
+                try:
+                    db_save_assessment_result(cid, json.dumps(result), cand["status"])
+                except Exception:
+                    pass
+
+                
 
                 # Log it
                 add_log(cid, "ASSESSMENT", decision, result["score_percent"],
