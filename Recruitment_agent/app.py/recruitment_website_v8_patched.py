@@ -148,6 +148,7 @@ defaults = {
     "_assess_token": None,
     "_candidate_authenticated": False,
     "_candidate_cid": None,
+    "_candidate_mode": False,
     # Authentication
     "authenticated": False,
     "current_user": None,
@@ -1935,14 +1936,25 @@ elif st.session_state.get("_assess_token") and not st.session_state.get("_candid
         c_user = st.text_input("Username", placeholder="Enter username from email", key="cand_login_user")
         c_pass = st.text_input("Password", type="password", placeholder="Enter password from email", key="cand_login_pass")
 
+        # if st.button("🚀 Start Assessment", type="primary", use_container_width=True, key="cand_login_btn"):
+        #     if _creds and c_user == _creds["username"] and c_pass == _creds["password"]:
+        #         st.session_state["_candidate_authenticated"] = True
+        #         st.session_state["_candidate_cid"] = _creds["candidate_id"]
+        #         st.session_state.authenticated = True
+        #         st.session_state.show_landing = False
+        #         st.session_state["_arrived_via_link"] = True
+        #         st.session_state.current_candidate_id = _creds["candidate_id"]
+
+
         if st.button("🚀 Start Assessment", type="primary", use_container_width=True, key="cand_login_btn"):
             if _creds and c_user == _creds["username"] and c_pass == _creds["password"]:
                 st.session_state["_candidate_authenticated"] = True
                 st.session_state["_candidate_cid"] = _creds["candidate_id"]
+                st.session_state["_candidate_mode"] = True  # ← NEW: candidate-only mode
                 st.session_state.authenticated = True
                 st.session_state.show_landing = False
                 st.session_state["_arrived_via_link"] = True
-                st.session_state.current_candidate_id = _creds["candidate_id"]
+                st.session_state.current_candidate_id = _creds["candidate_id"]            
                 st.success(f"✅ Welcome, {_creds['candidate_name']}! Loading your assessment...")
                 time.sleep(1)
                 st.rerun()
@@ -1958,7 +1970,111 @@ elif not st.session_state.authenticated:
     render_login_page()
 
 # Gate 3: Authenticated - Full App
+# else:
+
 else:
+
+    # ═══ CANDIDATE-ONLY ASSESSMENT MODE ═══
+    if st.session_state.get("_candidate_mode"):
+        cid = st.session_state.get("_candidate_cid")
+        cand = st.session_state.candidates.get(cid, {}) if cid else {}
+
+        if not cand:
+            st.error("❌ Assessment not found. Please contact the recruitment team.")
+            st.stop()
+
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,#4F46E5,#7C3AED); color:white; padding:1.5rem 2rem; border-radius:16px; margin-bottom:2rem;">
+            <h2 style="margin:0; color:white;">📝 Assessment: {cand.get('role', 'Role')}</h2>
+            <p style="margin:0.5rem 0 0; opacity:0.9;">Candidate: {cand.get('name', '')} | 30 Questions | 20 Minutes</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Check if already submitted
+        if cand.get("assessment_result"):
+            st.success("✅ You have already submitted your assessment. Thank you!")
+            st.info("You may close this page now. The recruitment team will contact you with next steps.")
+            st.stop()
+
+        # Assessment instructions
+        if not st.session_state.assessment_started:
+            st.markdown("""
+            **Assessment Instructions:**
+            - 30 multiple-choice questions
+            - Duration: 20 minutes
+            - Pass threshold: > 90%
+            - Complete in one sitting
+            - Do NOT switch tabs or windows
+
+            By clicking Start, you agree to the assessment policies.
+            """)
+            if st.button("🚀 Start Assessment", type="primary", use_container_width=True, key="cand_start_assess"):
+                questions = get_assessment_questions(cand["role"], 30)
+                st.session_state.assessment_questions = questions
+                st.session_state.assessment_started = True
+                st.session_state.assessment_answers = {}
+                st.session_state.assessment_submitted = False
+                st.session_state.assessment_start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                st.rerun()
+            st.stop()
+
+        # Show questions
+        questions = st.session_state.get("assessment_questions", [])
+        if not st.session_state.assessment_submitted:
+            st.info(f"⏱️ Started: {st.session_state.get('assessment_start_time','')} | Questions: {len(questions)}")
+            for i, q in enumerate(questions):
+                st.markdown(f"**Q{i+1}.** ({q.get('topic','')}) {q['q']}")
+                answer = st.radio(f"Answer Q{i+1}:", q["options"], key=f"cand_q_{i}", index=None, label_visibility="collapsed")
+                if answer is not None:
+                    st.session_state.assessment_answers[str(i)] = q["options"].index(answer)
+                st.markdown("---")
+
+            answered = len(st.session_state.assessment_answers)
+            st.progress(answered / len(questions))
+            st.markdown(f"**Answered: {answered}/{len(questions)}**")
+
+            if st.button("✅ Submit Assessment", type="primary", use_container_width=True, key="cand_submit_assess"):
+                st.session_state.assessment_submitted = True
+                result = score_assessment(questions, st.session_state.assessment_answers)
+                decision = "PASS" if result["score_percent"] > 90 else "FAIL"
+                result["decision"] = decision
+
+                # Store result in candidate record
+                cand["assessment_result"] = result
+                cand["status"] = "Passed Assessment" if decision == "PASS" else "Failed Assessment"
+                st.session_state.candidates[cid] = cand
+
+                # Log it
+                add_log(cid, "ASSESSMENT", decision, result["score_percent"],
+                    f"Score: {result['correct']}/{result['total']} ({result['score_percent']}%)",
+                    "Move to Interview" if decision == "PASS" else "Send Rejection")
+
+                # Auto-trigger email pipeline
+                if decision == "PASS":
+                    auto_pipeline_action(cand, "assessment_pass")
+                    cand["status"] = "Interview Scheduled"
+                else:
+                    auto_pipeline_action(cand, "assessment_fail")
+                st.session_state.candidates[cid] = cand
+                st.rerun()
+        else:
+            # Show results after submission
+            result = cand.get("assessment_result", {})
+            decision = result.get("decision", "FAIL")
+            score = result.get("score_percent", 0)
+
+            if decision == "PASS":
+                st.success(f"🎉 Congratulations! You scored **{score}%** — You PASSED!")
+                st.info("The recruitment team will contact you shortly to schedule your interview.")
+            else:
+                st.error(f"Your score: **{score}%** (required: >90%). Unfortunately you did not pass.")
+                st.info("Thank you for your time. The recruitment team will be in touch.")
+
+            st.markdown("---")
+            st.caption("You may close this page now.")
+
+        st.stop()  # ← CRITICAL: prevents the rest of the recruiter app from loading
+    # ═══ END CANDIDATE MODE ═══
 
     # ── SIDEBAR ──
     st.sidebar.markdown("""
