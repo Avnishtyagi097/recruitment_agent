@@ -2153,8 +2153,12 @@ else:
                 st.rerun()
         else:
             # Show results after submission
+            # result = cand.get("assessment_result", {})
+            # decision = result.get("decision", "FAIL")
             result = cand.get("assessment_result", {})
-            decision = result.get("decision", "FAIL")
+            if isinstance(result, str):
+                result = json.loads(result)
+            decision = result.get("decision", "FAIL") if isinstance(result, dict) else "FAIL"
             score = result.get("score_percent", 0)
 
             if decision == "PASS":
@@ -2646,7 +2650,7 @@ else:
 
     #     render_footer()
 
-    
+
     # ═════════════════════════════════════════════
     # PAGE 2: ASSESSMENT
     # ═════════════════════════════════════════════
