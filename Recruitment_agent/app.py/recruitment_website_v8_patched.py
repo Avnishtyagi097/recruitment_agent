@@ -2187,7 +2187,7 @@ else:
                 st.success(f"🎉 Congratulations! You scored **{score}%** — You PASSED!")
                 st.info("The recruitment team will contact you shortly to schedule your interview.")
             else:
-                st.error(f"Your score: **{score}%** (required: >90%). Unfortunately you did not pass.")
+                # st.error(f"Your score: **{score}%** (required: >90%). Unfortunately you did not pass.")
                 st.info("Thank you for your time. The recruitment team will be in touch.")
 
             st.markdown("---")
