@@ -87,6 +87,11 @@ def init():
             candidate_name TEXT NOT NULL,
             created_at TEXT
         );
+        
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        );
     """)
     c.commit()
     c.close()
@@ -132,27 +137,71 @@ def save_candidate(data):
     c.close()
 
 
+# def _row_to_candidate(row):
+#     """Convert a database row to a candidate dict matching session_state format."""
+#     if not row:
+#         return None
+#     return {
+#         "id": row["id"],
+#         "name": row["name"],
+#         "email": row["email"],
+#         "role": row["role"],
+#         "cv_text": row["cv_text"] or "",
+#         "ats_result": json.loads(row["ats_result"]) if row["ats_result"] else {},
+#         "assessment_result": json.loads(row["assessment_result"]) if row["assessment_result"] else None,
+#         "status": row["status"] or "Pending",
+#         "interview_scheduled": bool(row["interview_scheduled"]),
+#         "interview_slots": json.loads(row["interview_slots"]) if row["interview_slots"] else [],
+#         "interview_panel": json.loads(row["interview_panel"]) if row["interview_panel"] else [],
+#         "emails_sent": json.loads(row["emails_sent"]) if row["emails_sent"] else [],
+#         "auto_actions_assessment": json.loads(row["auto_actions"]) if row["auto_actions"] else [],
+#         "created_at": row["created_at"] or "",
+#     }
+
+
+def save_setting(key, value):
+    c = _conn()
+    c.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?,?)", (key, value))
+    c.commit()
+    c.close()
+
+def get_setting(key, default=""):
+    c = _conn()
+    row = c.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+    c.close()
+    return row["value"] if row else default
+
 def _row_to_candidate(row):
     """Convert a database row to a candidate dict matching session_state format."""
     if not row:
         return None
+
+    def _parse_json(val, default=None):
+        if val is None:
+            return default
+        if isinstance(val, (dict, list)):
+            return val
+        try:
+            return json.loads(val)
+        except Exception:
+            return default
+
     return {
         "id": row["id"],
         "name": row["name"],
         "email": row["email"],
         "role": row["role"],
         "cv_text": row["cv_text"] or "",
-        "ats_result": json.loads(row["ats_result"]) if row["ats_result"] else {},
-        "assessment_result": json.loads(row["assessment_result"]) if row["assessment_result"] else None,
+        "ats_result": _parse_json(row["ats_result"], {}),
+        "assessment_result": _parse_json(row["assessment_result"], None),
         "status": row["status"] or "Pending",
         "interview_scheduled": bool(row["interview_scheduled"]),
-        "interview_slots": json.loads(row["interview_slots"]) if row["interview_slots"] else [],
-        "interview_panel": json.loads(row["interview_panel"]) if row["interview_panel"] else [],
-        "emails_sent": json.loads(row["emails_sent"]) if row["emails_sent"] else [],
-        "auto_actions_assessment": json.loads(row["auto_actions"]) if row["auto_actions"] else [],
+        "interview_slots": _parse_json(row["interview_slots"], []),
+        "interview_panel": _parse_json(row["interview_panel"], []),
+        "emails_sent": _parse_json(row["emails_sent"], []),
+        "auto_actions_assessment": _parse_json(row["auto_actions"], []),
         "created_at": row["created_at"] or "",
     }
-
 
 def get_candidate(candidate_id):
     """Get a single candidate by ID. Returns dict or None."""
@@ -314,21 +363,27 @@ def get_assessment_creds(token):
 # SYNC HELPERS (bridge session_state ↔ SQLite)
 # ═══════════════════════════════════════════
 
+# def sync_candidates_to_session(session_state):
+#     """Load all candidates from SQLite into session_state.candidates."""
+#     db_candidates = get_all_candidates()
+#     for cid, cand in db_candidates.items():
+#         if cid not in session_state.candidates:
+#             session_state.candidates[cid] = cand
+#         else:
+#             # Update from DB if DB has newer data (e.g., assessment submitted by candidate)
+#             ss_cand = session_state.candidates[cid]
+#             if not ss_cand.get("assessment_result") and cand.get("assessment_result"):
+#                 session_state.candidates[cid] = cand
+#             elif cand.get("status") != ss_cand.get("status"):
+#                 # DB might have updates from candidate session
+#                 if cand.get("assessment_result"):
+#                     session_state.candidates[cid] = cand
+
 def sync_candidates_to_session(session_state):
-    """Load all candidates from SQLite into session_state.candidates."""
+    """Load all candidates from SQLite into session_state. SQLite always wins."""
     db_candidates = get_all_candidates()
     for cid, cand in db_candidates.items():
-        if cid not in session_state.candidates:
-            session_state.candidates[cid] = cand
-        else:
-            # Update from DB if DB has newer data (e.g., assessment submitted by candidate)
-            ss_cand = session_state.candidates[cid]
-            if not ss_cand.get("assessment_result") and cand.get("assessment_result"):
-                session_state.candidates[cid] = cand
-            elif cand.get("status") != ss_cand.get("status"):
-                # DB might have updates from candidate session
-                if cand.get("assessment_result"):
-                    session_state.candidates[cid] = cand
+        session_state.candidates[cid] = cand
 
 
 def sync_session_to_db(session_state):
