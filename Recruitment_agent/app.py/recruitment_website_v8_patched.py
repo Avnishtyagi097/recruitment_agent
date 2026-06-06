@@ -214,6 +214,16 @@ init_auth_db()
 db.init()
 db.sync_candidates_to_session(st.session_state)
 
+
+# ═══ TEMPORARY DEBUG — remove after testing ═══
+import db_manager as _dbg
+_test = _dbg.get_all_candidates()
+for _tid, _tc in _test.items():
+    _ar = _tc.get("assessment_result")
+    print(f"[DEBUG] Candidate {_tid}: status={_tc.get('status')}, has_assessment={_ar is not None}, type={type(_ar)}")
+# ═══ END DEBUG ═══
+
+
 # Load persisted SMTP settings
 if not st.session_state.sender_email:
     st.session_state.sender_email = db.get_setting("smtp_email", "")
@@ -2591,97 +2601,7 @@ else:
 
         render_footer()
 
-    # # ═════════════════════════════════════════════
-    # # PAGE 2: ASSESSMENT
-    # # ═════════════════════════════════════════════
-    # elif page == "\U0001f4dd Assessment":
-    #     st.markdown("""
-    #     <div class="hero-banner animate-in">
-    #         <h1>\U0001f4dd Role-Specific Assessment</h1>
-    #         <p>30 curated questions • 20-minute timer • Anti-cheating monitored • Auto-scored</p>
-    #     </div>
-    #     """, unsafe_allow_html=True)
-
-    #     if st.session_state.get("_arrived_via_link"):
-    #         st.success("\u2705 Welcome via assessment link!")
-    #         st.session_state["_arrived_via_link"] = False
-    #         st.query_params.clear()
-
-    #     cid = st.session_state.current_candidate_id
-    #     if not cid or cid not in st.session_state.candidates:
-    #         st.warning("\u26a0\ufe0f No active candidate. Complete ATS screening first.")
-    #     else:
-    #         cand = st.session_state.candidates[cid]
-    #         status = cand.get("status", "")
-    #         if status == "Failed ATS": st.error("\u274c This candidate did not pass ATS.")
-    #         elif status in ["Passed Assessment", "Failed Assessment", "Interview Scheduled"]:
-    #             st.info(f"\u2139\ufe0f Assessment completed. Status: **{status}**")
-    #         else:
-    #             st.markdown(f'<div class="section-card"><strong>Candidate:</strong> {cand["name"]} | <strong>Role:</strong> {cand["role"]} | <strong>ATS:</strong> {cand["ats_result"]["ats_score"]}%</div>', unsafe_allow_html=True)
-    #             with st.expander("\U0001f4cb Instructions", expanded=not st.session_state.assessment_started):
-    #                 st.markdown("**30 MCQs • 20 min • Pass: > 90%**\n\n\u26a0\ufe0f No tab switching, copy-paste monitored.")
-
-    #             if not st.session_state.assessment_started:
-    #                 if st.button("\U0001f680 Start Assessment", type="primary", use_container_width=True):
-    #                     st.session_state.assessment_questions = get_assessment_questions(cand["role"], 30)
-    #                     st.session_state.assessment_started = True
-    #                     st.session_state.assessment_answers = {}
-    #                     st.session_state.assessment_submitted = False
-    #                     st.session_state.assessment_start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    #                     add_log(cid, "ASSESSMENT_STARTED", "IN_PROGRESS", "N/A", "Started", "Awaiting submission")
-    #                     st.rerun()
-    #             else:
-    #                 questions = st.session_state.get("assessment_questions", [])
-    #                 if not questions: st.error("Error loading questions.")
-    #                 elif not st.session_state.assessment_submitted:
-    #                     st.info(f"\u23f1\ufe0f **Started:** {st.session_state.get('assessment_start_time','')} | **Questions:** {len(questions)}")
-    #                     for i, q in enumerate(questions):
-    #                         st.markdown(f'<div class="question-card"><span class="q-number">Q{i+1}</span> <span class="q-meta">({q.get("topic","")}, {q.get("difficulty","")})</span><br><strong>{q["q"]}</strong></div>', unsafe_allow_html=True)
-    #                         answer = st.radio(f"Q{i+1}:", options=q["options"], key=f"assess_q_{i}", index=None, label_visibility="collapsed")
-    #                         if answer is not None:
-    #                             st.session_state.assessment_answers[str(i)] = q["options"].index(answer)
-
-    #                     answered = len(st.session_state.assessment_answers)
-    #                     st.markdown(f"**Answered:** {answered} / {len(questions)}")
-    #                     st.progress(answered / len(questions))
-
-    #                     if st.button("\u2705 Submit Assessment", type="primary", use_container_width=True):
-    #                         st.session_state.assessment_submitted = True
-    #                         result = score_assessment(questions, st.session_state.assessment_answers)
-    #                         st.session_state.assessment_result = result
-    #                         decision = "PASS" if result["score_percent"] > 90 else "FAIL"
-    #                         result["decision"] = decision
-    #                         cand["assessment_result"] = result
-    #                         cand["status"] = "Passed Assessment" if decision == "PASS" else "Failed Assessment"
-    #                         add_log(cid, "ASSESSMENT", decision, result["score_percent"],
-    #                                 f"{result['correct']}/{result['total']} ({result['score_percent']}%)",
-    #                                 "Interview (Auto)" if decision == "PASS" else "Rejection (Auto)")
-    #                         if decision == "PASS":
-    #                             actions = auto_pipeline_action(cand, "assessment_pass")
-    #                             cand["status"] = "Interview Scheduled"
-    #                         else:
-    #                             actions = auto_pipeline_action(cand, "assessment_fail")
-    #                         cand["auto_actions_assessment"] = actions
-    #                         st.session_state.candidates[cid] = cand
-    #                         st.rerun()
-    #                 else:
-    #                     result = st.session_state.get("assessment_result", cand.get("assessment_result", {}))
-    #                     decision = result.get("decision", "FAIL")
-    #                     circ_class = "pass" if decision == "PASS" else "fail"
-    #                     circ_color = "#065F46" if decision == "PASS" else "#991B1B"
-    #                     st.markdown(f'<div style="text-align:center; margin:2rem 0;"><div class="score-circle {circ_class}" style="margin:0 auto;"><div class="score-value" style="color:{circ_color}">{result.get("score_percent",0)}%</div><div class="score-label" style="color:{circ_color}">{"PASSED" if decision == "PASS" else "FAILED"}</div></div></div>', unsafe_allow_html=True)
-    #                     if decision == "PASS":
-    #                         st.markdown(f'<div class="result-banner pass-banner">\U0001f389 PASSED — {result.get("correct",0)}/{result.get("total",0)}</div>', unsafe_allow_html=True)
-    #                     else:
-    #                         st.markdown(f'<div class="result-banner fail-banner">\u274c FAILED — {result.get("correct",0)}/{result.get("total",0)}</div>', unsafe_allow_html=True)
-    #                     with st.expander("\U0001f4c8 Topic Breakdown", expanded=True):
-    #                         for topic, data in result.get("topic_breakdown", {}).items():
-    #                             pct = (data["correct"]/data["total"]*100) if data["total"] > 0 else 0
-    #                             st.markdown(f"**{topic}**: {data['correct']}/{data['total']} ({pct:.0f}%)"); st.progress(min(pct/100, 1.0))
-    #                     auto_acts = cand.get("auto_actions_assessment", [])
-    #                     if auto_acts: show_automation_results(auto_acts)
-
-    #     render_footer()
+    
 
 
     # ═════════════════════════════════════════════
