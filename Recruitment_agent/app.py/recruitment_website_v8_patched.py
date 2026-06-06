@@ -212,11 +212,16 @@ for k, v in defaults.items():
 
 init_auth_db()
 db.init()
-# db.sync_candidates_to_session(st.session_state)
+db.sync_candidates_to_session(st.session_state)
 
-_db_candidates = db.get_all_candidates()
-for _cid, _cdata in _db_candidates.items():
-    st.session_state.candidates[_cid] = _cdata
+# Load persisted SMTP settings
+if not st.session_state.sender_email:
+    st.session_state.sender_email = db.get_setting("smtp_email", "")
+    st.session_state.sender_password = db.get_setting("smtp_password", "")
+    st.session_state.smtp_server = db.get_setting("smtp_server", "smtp.gmail.com")
+    st.session_state.smtp_port = int(db.get_setting("smtp_port", "587"))
+    if st.session_state.sender_email and st.session_state.sender_password:
+        st.session_state.smtp_configured = True
 
 
 # ─────────────────────────────────────────────
@@ -2252,8 +2257,14 @@ else:
         st.session_state.smtp_port = st.number_input("SMTP Port", value=st.session_state.smtp_port, min_value=1, max_value=65535, key="sb_smtp_port")
         st.session_state.sender_email = st.text_input("Sender Email", value=st.session_state.sender_email, key="sb_sender_email")
         st.session_state.sender_password = st.text_input("Sender Password", value=st.session_state.sender_password, type="password", key="sb_sender_pwd")
+        # if st.session_state.sender_email and st.session_state.sender_password:
+        #     st.session_state.smtp_configured = True
         if st.session_state.sender_email and st.session_state.sender_password:
-            st.session_state.smtp_configured = True
+        st.session_state.smtp_configured = True
+        db.save_setting("smtp_email", st.session_state.sender_email)
+        db.save_setting("smtp_password", st.session_state.sender_password)
+        db.save_setting("smtp_server", st.session_state.smtp_server)
+        db.save_setting("smtp_port", str(st.session_state.smtp_port))
         else:
             st.session_state.smtp_configured = False
         if st.button("\U0001f50c Test SMTP"):
