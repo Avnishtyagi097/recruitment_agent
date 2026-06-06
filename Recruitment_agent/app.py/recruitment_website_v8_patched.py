@@ -2151,14 +2151,36 @@ else:
                     auto_pipeline_action(cand, "assessment_fail")
                 st.session_state.candidates[cid] = cand
                 st.rerun()
+        # else:
+        #     # Show results after submission
+        #     # result = cand.get("assessment_result", {})
+        #     # decision = result.get("decision", "FAIL")
+        #     result = cand.get("assessment_result", {})
+            
+        #     if isinstance(result, str):
+        #         try:
+        #             result = json.loads(result)
+        #         except Exception:
+        #             result = {}
+        #     if not isinstance(result, dict):
+        #         result = {}
+
+        #     if isinstance(result, str):
+        #         result = json.loads(result)
+        #     decision = result.get("decision", "FAIL") if isinstance(result, dict) else "FAIL"
+        #     score = result.get("score_percent", 0)
+
         else:
             # Show results after submission
-            # result = cand.get("assessment_result", {})
-            # decision = result.get("decision", "FAIL")
             result = cand.get("assessment_result", {})
             if isinstance(result, str):
-                result = json.loads(result)
-            decision = result.get("decision", "FAIL") if isinstance(result, dict) else "FAIL"
+                try:
+                    result = json.loads(result)
+                except Exception:
+                    result = {}
+            if not isinstance(result, dict):
+                result = {}
+            decision = result.get("decision", "FAIL")
             score = result.get("score_percent", 0)
 
             if decision == "PASS":
