@@ -2260,11 +2260,11 @@ else:
         # if st.session_state.sender_email and st.session_state.sender_password:
         #     st.session_state.smtp_configured = True
         if st.session_state.sender_email and st.session_state.sender_password:
-        st.session_state.smtp_configured = True
-        db.save_setting("smtp_email", st.session_state.sender_email)
-        db.save_setting("smtp_password", st.session_state.sender_password)
-        db.save_setting("smtp_server", st.session_state.smtp_server)
-        db.save_setting("smtp_port", str(st.session_state.smtp_port))
+            st.session_state.smtp_configured = True
+            db.save_setting("smtp_email", st.session_state.sender_email)
+            db.save_setting("smtp_password", st.session_state.sender_password)
+            db.save_setting("smtp_server", st.session_state.smtp_server)
+            db.save_setting("smtp_port", str(st.session_state.smtp_port))
         else:
             st.session_state.smtp_configured = False
         if st.button("\U0001f50c Test SMTP"):
