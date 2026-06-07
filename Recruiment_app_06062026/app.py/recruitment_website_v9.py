@@ -2489,22 +2489,22 @@ else:
 
         st.stop()
     # ═══ END CANDIDATE MODE ═══
-            result = {}
-            decision = result.get("decision", "FAIL")
-            score = result.get("score_percent", 0)
+    #         result = {}
+    #         decision = result.get("decision", "FAIL")
+    #         score = result.get("score_percent", 0)
 
-            if decision == "PASS":
-                st.success(f"🎉 Congratulations! You scored **{score}%** — You PASSED!")
-                st.info("The recruitment team will contact you shortly to schedule your interview.")
-            else:
-                # st.error(f"Your score: **{score}%** (required: >90%). Unfortunately you did not pass.")
-                st.info("Thank you for your time. The recruitment team will be in touch.")
+    #         if decision == "PASS":
+    #             st.success(f"🎉 Congratulations! You scored **{score}%** — You PASSED!")
+    #             st.info("The recruitment team will contact you shortly to schedule your interview.")
+    #         else:
+    #             # st.error(f"Your score: **{score}%** (required: >90%). Unfortunately you did not pass.")
+    #             st.info("Thank you for your time. The recruitment team will be in touch.")
 
-            st.markdown("---")
-            st.caption("You may close this page now.")
+    #         st.markdown("---")
+    #         st.caption("You may close this page now.")
 
-        st.stop()  # ← CRITICAL: prevents the rest of the recruiter app from loading
-    # ═══ END CANDIDATE MODE ═══
+    #     st.stop()  # ← CRITICAL: prevents the rest of the recruiter app from loading
+    # # ═══ END CANDIDATE MODE ═══
 
     # ── SIDEBAR ──
     st.sidebar.markdown("""
