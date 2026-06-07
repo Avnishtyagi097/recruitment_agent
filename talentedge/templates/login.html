@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Sign In - TalentEdge</title><link rel="stylesheet" href="/static/css/main.css"></head><body>
+<div class="auth-container">
+<div class="auth-brand"><div style="font-size:3rem;margin-bottom:1rem">🚀</div><h1>TalentEdge AI</h1><p>AI-Powered Recruitment Screening Platform. Automate hiring, reduce bias, find the best talent faster.</p><div class="features"><div>✅ Smart CV Screening</div><div>✅ Automated Assessments</div><div>✅ Auto Email Workflows</div><div>✅ Interview Scheduling</div></div></div>
+<div class="auth-form-panel"><div class="auth-form-box"><h2>Welcome Back</h2><p class="subtitle">Sign in to your recruitment dashboard</p>
+<form id="loginForm" onsubmit="event.preventDefault(); submitForm('loginForm','/api/auth/login','/dashboard','Welcome back!')">
+<div class="form-group"><label>Email Address</label><input type="email" name="email" required placeholder="you@company.com"></div>
+<div class="form-group"><label>Password</label><div class="input-wrapper"><input type="password" name="password" required placeholder="Enter your password"><button type="button" class="toggle-pw" onclick="togglePassword(this)">👁</button></div></div>
+<div class="checkbox-group"><input type="checkbox" name="remember_me" id="remember"><label for="remember">Remember me for 7 days</label></div>
+<button type="submit" class="btn btn-primary"><div class="spinner"></div><span class="btn-text">Sign In</span></button>
+</form>
+<div class="form-links"><a href="/forgot-password">Forgot Password?</a><br><br>Don't have an account? <a href="/signup">Sign Up</a></div>
+</div></div></div>
+<script src="/static/js/app.js"></script></body></html>

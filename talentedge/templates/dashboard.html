@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard - TalentEdge AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#F1F5F9;color:#1E293B;display:flex;min-height:100vh}
+/* Sidebar */
+.sidebar{width:260px;background:linear-gradient(180deg,#0F172A,#1E1B4B);color:#CBD5E1;display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100}
+.sidebar .logo{padding:1.5rem;font-family:'Poppins',sans-serif;font-size:1.2rem;font-weight:800;color:#F1F5F9;border-bottom:1px solid #334155;display:flex;align-items:center;gap:.6rem}
+.sidebar nav{flex:1;padding:1rem 0}
+.sidebar nav a{display:flex;align-items:center;gap:.75rem;padding:.75rem 1.5rem;color:#94A3B8;font-weight:500;font-size:.9rem;cursor:pointer;transition:all .2s;text-decoration:none;border-left:3px solid transparent}
+.sidebar nav a:hover,.sidebar nav a.active{background:rgba(99,102,241,.15);color:#E0E7FF;border-left-color:#6366F1}
+.sidebar .user-box{padding:1rem 1.5rem;border-top:1px solid #334155;font-size:.85rem}
+.sidebar .user-box .name{color:#F1F5F9;font-weight:600}
+.sidebar .user-box .company{color:#64748B;font-size:.75rem}
+.sidebar .user-box .logout-btn{margin-top:.5rem;background:rgba(239,68,68,.15);color:#FCA5A5;border:none;padding:.4rem 1rem;border-radius:6px;cursor:pointer;font-weight:600;font-size:.8rem;width:100%}
+.sidebar .user-box .logout-btn:hover{background:rgba(239,68,68,.3)}
+/* Main */
+.main{margin-left:260px;flex:1;padding:2rem;min-height:100vh}
+.page{display:none}
+.page.active{display:block;animation:fadeIn .4s ease}
+/* Cards */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+.stat-card{background:white;border-radius:14px;padding:1.3rem;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #E2E8F0;text-align:center;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.blue::before{background:linear-gradient(90deg,#4F46E5,#818CF8)}
+.stat-card.green::before{background:linear-gradient(90deg,#10B981,#34D399)}
+.stat-card.red::before{background:linear-gradient(90deg,#EF4444,#F87171)}
+.stat-card.orange::before{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+.stat-card .val{font-family:'Poppins',sans-serif;font-size:2rem;font-weight:800;line-height:1.2}
+.stat-card.blue .val{color:#4F46E5} .stat-card.green .val{color:#10B981} .stat-card.red .val{color:#EF4444} .stat-card.orange .val{color:#F59E0B}
+.stat-card .lbl{font-size:.8rem;color:#64748B;font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-top:.2rem}
+/* Banner */
+.banner{background:linear-gradient(135deg,#4F46E5,#7C3AED,#EC4899);border-radius:16px;padding:2rem;color:white;margin-bottom:2rem}
+.banner h1{font-family:'Poppins',sans-serif;font-size:1.6rem;font-weight:800}
+.banner p{opacity:.85;margin-top:.3rem}
+/* Card container */
+.card{background:white;border-radius:14px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #E2E8F0;margin-bottom:1.5rem}
+.card h3{font-family:'Poppins',sans-serif;font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+/* Form */
+.form-group{margin-bottom:1.2rem}
+.form-group label{display:block;font-weight:600;font-size:.85rem;color:#334155;margin-bottom:.3rem}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:.65rem .9rem;border:2px solid #E2E8F0;border-radius:10px;font-size:.9rem;transition:border-color .3s;font-family:'Inter',sans-serif}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#6366F1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+/* File upload */
+.file-drop{border:2px dashed #CBD5E1;border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .3s;background:#F8FAFC}
+.file-drop:hover,.file-drop.dragover{border-color:#6366F1;background:#EEF2FF}
+.file-drop .icon{font-size:2.5rem;margin-bottom:.5rem}
+.file-drop p{color:#64748B;font-size:.9rem}
+.file-drop .selected{color:#10B981;font-weight:600;margin-top:.5rem}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.7rem 1.5rem;border-radius:10px;font-weight:700;font-size:.9rem;cursor:pointer;border:none;transition:all .3s;font-family:'Inter',sans-serif}
+.btn-primary{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;box-shadow:0 4px 12px rgba(79,70,229,.25)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,70,229,.35)}
+.btn-sm{padding:.4rem .9rem;font-size:.8rem;border-radius:8px}
+.btn-success{background:#10B981;color:white} .btn-danger{background:#EF4444;color:white} .btn-warning{background:#F59E0B;color:white}
+.btn-outline{background:transparent;border:2px solid #E2E8F0;color:#64748B} .btn-outline:hover{border-color:#6366F1;color:#4F46E5}
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{background:#F8FAFC;padding:.7rem .8rem;text-align:left;font-weight:600;color:#64748B;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #E2E8F0}
+td{padding:.7rem .8rem;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+tr:hover td{background:#F8FAFC}
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:50px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.badge-pass{background:#D1FAE5;color:#065F46} .badge-fail{background:#FEE2E2;color:#991B1B} .badge-review{background:#FEF3C7;color:#92400E} .badge-pending{background:#DBEAFE;color:#1E40AF} .badge-interview{background:#EDE9FE;color:#5B21B6}
+/* Score circle */
+.score-circle{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;font-family:'Poppins'}
+.score-high{background:#D1FAE5;color:#065F46;border:2px solid #10B981}
+.score-mid{background:#FEF3C7;color:#92400E;border:2px solid #F59E0B}
+.score-low{background:#FEE2E2;color:#991B1B;border:2px solid #EF4444}
+/* ATS Result */
+.ats-result{margin-top:1.5rem;padding:1.5rem;border-radius:12px;border:1px solid #E2E8F0;background:#F8FAFC}
+.ats-result .ats-score-big{text-align:center;margin-bottom:1rem}
+.ats-result .ats-score-big .num{font-family:'Poppins';font-size:3rem;font-weight:800}
+.ats-result .ats-score-big .num.pass{color:#10B981} .ats-result .ats-score-big .num.fail{color:#EF4444} .ats-result .ats-score-big .num.review{color:#F59E0B}
+.ats-result .ats-score-big .lbl{font-size:.85rem;color:#64748B}
+.skills-row{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0}
+.skill-tag{padding:.2rem .6rem;border-radius:20px;font-size:.75rem;font-weight:600}
+.skill-match{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+.skill-miss{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;padding:.8rem 1.3rem;border-radius:10px;color:white;font-weight:600;font-size:.85rem;z-index:99999;animation:slideIn .4s ease;box-shadow:0 6px 25px rgba(0,0,0,.15)}
+.toast-success{background:#10B981} .toast-error{background:#EF4444} .toast-info{background:#3B82F6}
+/* Loading */
+.loading-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:9999;justify-content:center;align-items:center}
+.loading-overlay.show{display:flex}
+.spinner-lg{width:48px;height:48px;border:4px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:768px){.sidebar{display:none}.main{margin-left:0}.stat-row{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+    <div class="logo">🚀 TalentEdge AI</div>
+    <nav>
+        <a class="active" onclick="showPage('home')" data-page="home">📊 Dashboard</a>
+        <a onclick="showPage('upload')" data-page="upload">📄 Upload CV</a>
+        <a onclick="showPage('candidates')" data-page="candidates">👥 Candidates</a>
+        <a onclick="showPage('logs')" data-page="logs">📋 Pipeline Logs</a>
+        <a onclick="showPage('emails')" data-page="emails">📧 Email Logs</a>
+    </nav>
+    <div class="user-box">
+        <div class="name" id="user-name">{{ user.name }}</div>
+        <div class="company" id="user-company">{{ user.company }}</div>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</aside>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading"><div class="spinner-lg"></div></div>
+
+<!-- Main content -->
+<div class="main">
+
+<!-- PAGE: HOME -->
+<div class="page active" id="page-home">
+    <div class="banner"><h1>Welcome, {{ user.name }}! 👋</h1><p>{{ user.company }} — Your AI recruitment dashboard</p></div>
+    <div class="stat-row">
+        <div class="stat-card blue"><div class="val" id="stat-total">-</div><div class="lbl">Total Candidates</div></div>
+        <div class="stat-card green"><div class="val" id="stat-passed">-</div><div class="lbl">Passed ATS</div></div>
+        <div class="stat-card red"><div class="val" id="stat-failed">-</div><div class="lbl">Failed ATS</div></div>
+        <div class="stat-card orange"><div class="val" id="stat-interviews">-</div><div class="lbl">Interviews</div></div>
+    </div>
+    <div class="card">
+        <h3>🚀 Quick Actions</h3>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="showPage('upload')">📄 Upload New CV</button>
+            <button class="btn btn-outline" onclick="showPage('candidates')">👥 View Candidates</button>
+            <button class="btn btn-outline" onclick="showPage('logs')">📋 Pipeline Logs</button>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE: UPLOAD CV -->
+<div class="page" id="page-upload">
+    <div class="banner"><h1>📄 Upload CV & ATS Screening</h1><p>Upload a candidate's CV and analyze it against the job description</p></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+        <div class="card">
+            <h3>📎 Candidate CV</h3>
+            <div class="file-drop" id="file-drop" onclick="document.getElementById('cv-file').click()">
+                <div class="icon">📄</div>
+                <p>Drag & drop CV here or <strong>click to browse</strong></p>
+                <p style="font-size:.8rem;color:#94A3B8">PDF, DOCX, or TXT</p>
+                <div class="selected" id="file-name"></div>
+            </div>
+            <input type="file" id="cv-file" accept=".pdf,.docx,.txt" style="display:none" onchange="onFileSelect(this)">
+            <div class="form-group" style="margin-top:1rem">
+                <label>Role Applied For</label>
+                <select id="role-select">
+                    <option>Data Engineer</option>
+                    <option>Software Engineer</option>
+                    <option>Data Analyst</option>
+                    <option>DevOps Engineer</option>
+                    <option>Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="card">
+            <h3>📋 Job Description</h3>
+            <div class="form-group">
+                <textarea id="jd-text" rows="14" placeholder="Paste the job description here..."></textarea>
+            </div>
+        </div>
+    </div>
+    <button class="btn btn-primary" onclick="runATS()" style="margin-top:1rem;width:100%;padding:1rem;font-size:1rem" id="ats-btn">
+        🔍 Analyze CV & Generate ATS Score
+    </button>
+    <div id="ats-results" style="display:none"></div>
+</div>
+
+<!-- PAGE: CANDIDATES -->
+<div class="page" id="page-candidates">
+    <div class="banner"><h1>👥 Candidate Pipeline</h1><p>All candidates across every stage of the hiring process</p></div>
+    <div class="stat-row" id="cand-stats"></div>
+    <div class="card">
+        <h3>📋 All Candidates</h3>
+        <div style="overflow-x:auto">
+            <table id="cand-table">
+                <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>ATS Score</th><th>Assessment</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="cand-tbody"></tbody>
+            </table>
+        </div>
+        <div id="no-candidates" style="text-align:center;padding:3rem;color:#94A3B8;display:none">
+            <div style="font-size:3rem;margin-bottom:1rem">📭</div>
+            <p>No candidates yet. <a href="#" onclick="showPage('upload')" style="color:#4F46E5;font-weight:600">Upload a CV</a> to get started.</p>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE: PIPELINE LOGS -->
+<div class="page" id="page-logs">
+    <div class="banner"><h1>📋 Pipeline Decision Logs</h1><p>Full audit trail of all screening decisions</p></div>
+    <div class="card">
+        <div style="overflow-x:auto">
+            <table>
+                <thead><tr><th>Time</th><th>Candidate</th><th>Stage</th><th>Decision</th><th>Score</th><th>Reason</th><th>Next Action</th></tr></thead>
+                <tbody id="logs-tbody"></tbody>
+            </table>
+        </div>
+        <div id="no-logs" style="text-align:center;padding:2rem;color:#94A3B8;display:none">No logs yet.</div>
+    </div>
+</div>
+
+<!-- PAGE: EMAIL LOGS -->
+<div class="page" id="page-emails">
+    <div class="banner"><h1>📧 Email Automation Log</h1><p>Track all automated emails</p></div>
+    <div class="card">
+        <div style="overflow-x:auto">
+            <table>
+                <thead><tr><th>Time</th><th>To</th><th>Type</th><th>Status</th><th>Detail</th></tr></thead>
+                <tbody id="emails-tbody"></tbody>
+            </table>
+        </div>
+        <div id="no-emails" style="text-align:center;padding:2rem;color:#94A3B8;display:none">No emails yet.</div>
+    </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ═══ Navigation ═══
+function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.querySelector(`[data-page="${name}"]`).classList.add('active');
+    if (name === 'home') loadStats();
+    if (name === 'candidates') loadCandidates();
+    if (name === 'logs') loadLogs();
+    if (name === 'emails') loadEmails();
+}
+
+// ═══ Toast ═══
+function toast(msg, type='info') {
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+// ═══ Loading ═══
+function setLoading(on) {
+    document.getElementById('loading').classList.toggle('show', on);
+}
+
+// ═══ API Helper ═══
+async function api(url, options = {}) {
+    const res = await fetch(url, {
+        credentials: 'include',
+        headers: {'Content-Type': 'application/json', ...options.headers},
+        ...options,
+    });
+    if (res.status === 401) { window.location.href = '/login'; return null; }
+    return res;
+}
+
+// ═══ Logout ═══
+async function logout() {
+    await api('/api/auth/logout', {method: 'POST'});
+    window.location.href = '/login';
+}
+
+// ═══ Load Stats ═══
+async function loadStats() {
+    const res = await api('/api/candidates/');
+    if (!res) return;
+    const data = await res.json();
+    const cands = data.candidates || [];
+    document.getElementById('stat-total').textContent = cands.length;
+    document.getElementById('stat-passed').textContent = cands.filter(c => c.ats_decision === 'PASS').length;
+    document.getElementById('stat-failed').textContent = cands.filter(c => c.ats_decision === 'FAIL').length;
+    document.getElementById('stat-interviews').textContent = cands.filter(c => c.interview_scheduled).length;
+}
+
+// ═══ File Upload ═══
+let selectedFile = null;
+function onFileSelect(input) {
+    selectedFile = input.files[0];
+    document.getElementById('file-name').textContent = selectedFile ? '✅ ' + selectedFile.name : '';
+}
+// Drag & drop
+const drop = document.getElementById('file-drop');
+if (drop) {
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+    drop.addEventListener('drop', e => {
+        e.preventDefault(); drop.classList.remove('dragover');
+        const f = e.dataTransfer.files[0];
+        if (f) { selectedFile = f; document.getElementById('file-name').textContent = '✅ ' + f.name; }
+    });
+}
+
+// ═══ Run ATS ═══
+async function runATS() {
+    if (!selectedFile) { toast('Please upload a CV file', 'error'); return; }
+    const jd = document.getElementById('jd-text').value;
+    if (!jd.trim()) { toast('Please enter a job description', 'error'); return; }
+    const role = document.getElementById('role-select').value;
+
+    const btn = document.getElementById('ats-btn');
+    btn.disabled = true; btn.textContent = '⏳ Analyzing...';
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('role_applied', role);
+    formData.append('jd_text', jd);
+
+    try {
+        const res = await fetch('/api/candidates/upload-cv', {
+            method: 'POST', body: formData, credentials: 'include',
+        });
+        const data = await res.json();
+        if (res.ok) {
+            toast('CV analyzed successfully!', 'success');
+            showATSResults(data);
+        } else {
+            toast(data.detail || 'Error analyzing CV', 'error');
+        }
+    } catch(e) {
+        toast('Network error', 'error');
+    }
+    btn.disabled = false; btn.textContent = '🔍 Analyze CV & Generate ATS Score';
+    setLoading(false);
+}
+
+function showATSResults(data) {
+    const ats = data.ats;
+    const cls = ats.decision === 'PASS' ? 'pass' : (ats.requires_review ? 'review' : 'fail');
+    const dec = ats.decision === 'PASS' ? '✅ PASSED' : (ats.requires_review ? '⚠️ REVIEW' : '❌ FAILED');
+    let html = `
+    <div class="ats-result">
+        <div class="ats-score-big">
+            <div class="num ${cls}">${ats.ats_score}</div>
+            <div class="lbl">${dec} — ATS Score</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin:1rem 0;text-align:center">
+            ${Object.entries(ats.breakdown).map(([k,v]) =>
+                `<div style="background:#F8FAFC;padding:.5rem;border-radius:8px"><div style="font-weight:800;color:#4F46E5">${v}</div><div style="font-size:.7rem;color:#64748B">${k}</div></div>`
+            ).join('')}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div><strong style="color:#10B981">✅ Matched Skills</strong>
+                <div class="skills-row">${ats.matched_skills.map(s => `<span class="skill-tag skill-match">${s}</span>`).join('') || '<span style="color:#94A3B8">None</span>'}</div>
+            </div>
+            <div><strong style="color:#EF4444">❌ Missing Skills</strong>
+                <div class="skills-row">${ats.missing_skills.map(s => `<span class="skill-tag skill-miss">${s}</span>`).join('') || '<span style="color:#10B981">No gaps!</span>'}</div>
+            </div>
+        </div>
+        <div style="margin-top:1rem;padding:.8rem;background:white;border-radius:8px;border:1px solid #E2E8F0">
+            <strong>📝 Candidate:</strong> ${data.name} | <strong>Email:</strong> ${data.email || 'N/A'} | <strong>Status:</strong> ${data.status}
+        </div>
+    </div>`;
+    document.getElementById('ats-results').innerHTML = html;
+    document.getElementById('ats-results').style.display = 'block';
+}
+
+// ═══ Load Candidates ═══
+async function loadCandidates() {
+    const res = await api('/api/candidates/');
+    if (!res) return;
+    const data = await res.json();
+    const cands = data.candidates || [];
+    const tbody = document.getElementById('cand-tbody');
+    const noDiv = document.getElementById('no-candidates');
+
+    if (cands.length === 0) { tbody.innerHTML = ''; noDiv.style.display = 'block'; return; }
+    noDiv.style.display = 'none';
+
+    tbody.innerHTML = cands.map(c => {
+        const statusMap = {
+            'Passed ATS': 'badge-pass', 'Failed ATS': 'badge-fail', 'Manual Review': 'badge-review',
+            'Assessment Sent': 'badge-pending', 'Passed Assessment': 'badge-pass', 'Failed Assessment': 'badge-fail',
+            'Interview Scheduled': 'badge-interview',
+        };
+        const badge = statusMap[c.status] || 'badge-pending';
+        const scoreClass = c.ats_score > 85 ? 'score-high' : (c.ats_score >= 75 ? 'score-mid' : 'score-low');
+        let actions = '';
+        if (c.status === 'Manual Review') {
+            actions = `<button class="btn btn-sm btn-success" onclick="updateStatus('${c.candidate_id}','Assessment Sent')">✅</button>
+                       <button class="btn btn-sm btn-danger" onclick="updateStatus('${c.candidate_id}','Failed ATS')">❌</button>`;
+        }
+        return `<tr>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.role_applied}</td>
+            <td>${c.email || '—'}</td>
+            <td><div class="score-circle ${scoreClass}">${c.ats_score}</div></td>
+            <td>${c.assessment_score != null ? '<span class="badge ' + (c.assessment_decision === 'PASS' ? 'badge-pass' : 'badge-fail') + '">' + c.assessment_score + '% ' + c.assessment_decision + '</span>' : (c.status === 'Assessment Sent' ? '<span class="badge badge-pending">Awaiting</span>' : '—')}</td>
+            <td><span class="badge ${badge}">${c.status}</span></td>
+            <td><span class="badge ${badge}">${c.status}</span></td>
+            <td>${actions}</td>
+        </tr>`;
+    }).join('');
+}
+
+async function updateStatus(candId, status) {
+    setLoading(true);
+    const res = await api(`/api/candidates/${candId}/status?status=${status}`, {method: 'PATCH'});
+    if (res && res.ok) { toast(`Status updated to ${status}`, 'success'); loadCandidates(); }
+    else toast('Failed to update', 'error');
+    setLoading(false);
+}
+
+// ═══ Load Pipeline Logs ═══
+async function loadLogs() {
+    const res = await api('/api/logs/');
+    if (!res) return;
+    const data = await res.json();
+    const logs = data.logs || [];
+    const tbody = document.getElementById('logs-tbody');
+    if (logs.length === 0) { document.getElementById('no-logs').style.display = 'block'; tbody.innerHTML = ''; return; }
+    document.getElementById('no-logs').style.display = 'none';
+    tbody.innerHTML = logs.map(l => {
+        const decClass = l.decision === 'PASS' ? 'badge-pass' : (l.decision === 'FAIL' ? 'badge-fail' : 'badge-review');
+        return `<tr><td>${l.timestamp}</td><td>${l.candidate_id}</td><td>${l.stage}</td>
+            <td><span class="badge ${decClass}">${l.decision}</span></td>
+            <td>${l.score || '—'}</td><td>${l.reason || '—'}</td><td>${l.next_action || '—'}</td></tr>`;
+    }).join('');
+}
+
+// ═══ Load Email Logs ═══
+async function loadEmails() {
+    const res = await api('/api/emails/');
+    if (!res) return;
+    const data = await res.json();
+    const emails = data.emails || [];
+    const tbody = document.getElementById('emails-tbody');
+    if (emails.length === 0) { document.getElementById('no-emails').style.display = 'block'; tbody.innerHTML = ''; return; }
+    document.getElementById('no-emails').style.display = 'none';
+    tbody.innerHTML = emails.map(e => {
+        const cls = e.status === 'SENT' ? 'badge-pass' : (e.status === 'FAILED' ? 'badge-fail' : 'badge-review');
+        return `<tr><td>${e.sent_at}</td><td>${e.to}</td><td>${e.type}</td>
+            <td><span class="badge ${cls}">${e.status}</span></td><td>${e.detail || '—'}</td></tr>`;
+    }).join('');
+}
+
+// ═══ JD Templates ═══
+const JD = {
+"Data Engineer": `Role: Data Engineer\nExperience: 3-6 years\n\nRequired Skills:\n- Python, SQL, Spark, PySpark, Databricks\n- ETL/ELT, Apache Airflow, dbt\n- Data warehousing (Snowflake, Redshift, BigQuery)\n- Cloud: AWS / Azure / GCP\n- Data modeling, Kafka, performance optimization\n- Git, CI/CD for data pipelines`,
+"Software Engineer": `Role: Software Engineer\nExperience: 2-5 years\n\nRequired Skills:\n- Python, Java, or JavaScript\n- REST APIs, GraphQL, Microservices\n- SQL, PostgreSQL, MongoDB\n- Docker, Kubernetes, CI/CD\n- Git, Agile/Scrum, Unit testing`,
+"Data Analyst": `Role: Data Analyst\nExperience: 1-4 years\n\nRequired Skills:\n- SQL, Excel, Python\n- Tableau, Power BI, Looker\n- Statistical analysis\n- Data cleaning (Pandas, NumPy)\n- Data visualization`,
+"DevOps Engineer": `Role: DevOps Engineer\nExperience: 3-6 years\n\nRequired Skills:\n- Linux, Bash, Python\n- Docker, Kubernetes, Terraform\n- CI/CD: Jenkins, GitHub Actions\n- AWS / Azure / GCP\n- Prometheus, Grafana, ELK\n- Git, GitOps`,
+};
+document.getElementById('role-select').addEventListener('change', function() {
+    const jd = JD[this.value];
+    if (jd) document.getElementById('jd-text').value = jd.replace(/\\n/g, '\n');
+});
+// Auto-load first JD
+document.getElementById('jd-text').value = JD["Data Engineer"].replace(/\\n/g, '\n');
+
+// ═══ Init ═══
+loadStats();
+</script>
+</body>
+</html>

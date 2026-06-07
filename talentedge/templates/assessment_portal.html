@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Assessment - TalentEdge</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#F1F5F9;min-height:100vh}
+.container{max-width:800px;margin:0 auto;padding:2rem}
+.header{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;padding:1.5rem 2rem;border-radius:16px;margin-bottom:2rem;text-align:center}
+.header h1{font-family:'Poppins';font-size:1.5rem}
+.header p{opacity:.85;margin-top:.3rem}
+.card{background:white;border-radius:14px;padding:2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #E2E8F0;margin-bottom:1.5rem}
+.form-group{margin-bottom:1.2rem}
+.form-group label{display:block;font-weight:600;color:#334155;margin-bottom:.4rem}
+.form-group input{width:100%;padding:.7rem 1rem;border:2px solid #E2E8F0;border-radius:10px;font-size:.95rem}
+.form-group input:focus{outline:none;border-color:#6366F1}
+.btn{width:100%;padding:.85rem;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.timer{position:fixed;top:10px;right:10px;background:#0F172A;color:#F1F5F9;padding:10px 20px;border-radius:12px;font-family:'Courier New',monospace;font-size:1.2rem;font-weight:800;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);border:2px solid #334155}
+.timer.warning{background:#78350F;border-color:#F59E0B}
+.timer.critical{background:#7F1D1D;border-color:#EF4444;animation:pulse .5s ease infinite}
+.violation-bar{background:#FEE2E2;color:#991B1B;padding:.6rem 1rem;border-radius:8px;font-weight:600;font-size:.85rem;margin-bottom:1rem;display:none}
+.question{background:white;border-radius:12px;padding:1.5rem;margin-bottom:1rem;border:1px solid #E2E8F0;border-left:4px solid #4F46E5}
+.question .q-num{color:#4F46E5;font-weight:700;font-size:.85rem}
+.question .q-text{margin:.5rem 0;font-weight:600}
+.question label{display:block;padding:.5rem .8rem;margin:.3rem 0;border-radius:8px;cursor:pointer;transition:background .2s}
+.question label:hover{background:#EEF2FF}
+.question input[type=radio]{margin-right:.5rem;accent-color:#4F46E5}
+.progress-bar{height:6px;background:#E2E8F0;border-radius:3px;margin-bottom:1.5rem;overflow:hidden}
+.progress-bar div{height:100%;background:linear-gradient(90deg,#4F46E5,#7C3AED);border-radius:3px;transition:width .3s}
+.result-card{text-align:center;padding:2rem}
+.result-card .score{font-family:'Poppins';font-size:4rem;font-weight:800}
+.result-card .score.pass{color:#10B981} .result-card .score.fail{color:#EF4444}
+.toast{position:fixed;top:60px;right:10px;background:#EF4444;color:white;padding:.8rem 1.2rem;border-radius:10px;font-weight:600;font-size:.85rem;z-index:9999;animation:slideIn .4s ease}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+@keyframes slideIn{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+
+<div class="container">
+<!-- Login Screen -->
+<div id="login-screen">
+    <div class="header">
+        <h1>\U0001f4dd Candidate Assessment</h1>
+        <p>Enter the credentials from your invitation email</p>
+    </div>
+    <div class="card">
+        <div class="form-group"><label>Username</label><input type="text" id="login-user" placeholder="From your email"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="login-pass" placeholder="From your email"></div>
+        <button class="btn" onclick="doLogin()" id="login-btn">\U0001f680 Start Assessment</button>
+        <p style="text-align:center;margin-top:1rem;color:#94A3B8;font-size:.85rem">Token: {{ token }}</p>
+    </div>
+</div>
+
+<!-- Assessment Screen -->
+<div id="assess-screen" style="display:none">
+    <div class="header">
+        <h1>\U0001f4dd Assessment: <span id="assess-role"></span></h1>
+        <p>Candidate: <span id="assess-name"></span> | <span id="assess-count"></span> Questions</p>
+    </div>
+    <div class="timer" id="timer">\u23f1 --:--</div>
+    <div class="violation-bar" id="violation-bar">\u26a0 Tab switch detected! One more = auto-submit.</div>
+    <div class="progress-bar"><div id="progress" style="width:0%"></div></div>
+    <div id="questions-container"></div>
+    <div style="margin-top:1rem;text-align:center">
+        <p id="answered-text" style="margin-bottom:.5rem;font-weight:600;color:#64748B"></p>
+        <button class="btn" onclick="submitAssessment()" id="submit-btn">\u2705 Submit Assessment</button>
+    </div>
+</div>
+
+<!-- Result Screen -->
+<div id="result-screen" style="display:none">
+    <div class="header">
+        <h1>Assessment Complete</h1>
+        <p>Thank you for completing the assessment</p>
+    </div>
+    <div class="card result-card" id="result-content"></div>
+</div>
+</div>
+
+<script>
+const TOKEN = "{{ token }}";
+let questions = [];
+let answers = {};
+let duration = 20;
+let timeLeft = 0;
+let timerInterval = null;
+let tabViolations = 0;
+let candidateId = "";
+
+// ═══ Login ═══
+async function doLogin() {
+    const user = document.getElementById('login-user').value;
+    const pass = document.getElementById('login-pass').value;
+    if (!user || !pass) { showToast('Enter both fields'); return; }
+
+    document.getElementById('login-btn').disabled = true;
+    document.getElementById('login-btn').textContent = '\u23f3 Verifying...';
+
+    try {
+        const res = await fetch(`/api/assess/verify?token=${TOKEN}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`);
+        const data = await res.json();
+        if (res.ok && data.valid) {
+            candidateId = data.candidate_id;
+            questions = data.questions;
+            duration = data.duration_minutes || 20;
+            document.getElementById('assess-role').textContent = data.role;
+            document.getElementById('assess-name').textContent = data.candidate_name;
+            document.getElementById('assess-count').textContent = questions.length;
+            renderQuestions();
+            startTimer();
+            startAntiCheat();
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('assess-screen').style.display = 'block';
+        } else {
+            showToast(data.detail || 'Invalid credentials');
+            document.getElementById('login-btn').disabled = false;
+            document.getElementById('login-btn').textContent = '\U0001f680 Start Assessment';
+        }
+    } catch(e) {
+        showToast('Network error');
+        document.getElementById('login-btn').disabled = false;
+        document.getElementById('login-btn').textContent = '\U0001f680 Start Assessment';
+    }
+}
+
+// ═══ Render Questions ═══
+function renderQuestions() {
+    const c = document.getElementById('questions-container');
+    c.innerHTML = questions.map((q, i) => `
+        <div class="question" id="q-${i}">
+            <div class="q-num">Q${i+1} ${q.topic ? '('+q.topic+')' : ''}</div>
+            <div class="q-text">${q.q}</div>
+            ${q.options.map((o, j) => `
+                <label><input type="radio" name="q${i}" value="${j}" onchange="onAnswer(${i},${j})"> ${o}</label>
+            `).join('')}
+        </div>
+    `).join('');
+    updateProgress();
+}
+
+function onAnswer(qi, ai) {
+    answers[qi] = ai;
+    updateProgress();
+}
+
+function updateProgress() {
+    const n = Object.keys(answers).length;
+    const pct = (n / questions.length) * 100;
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('answered-text').textContent = `Answered: ${n} / ${questions.length}`;
+}
+
+// ═══ Timer ═══
+function startTimer() {
+    timeLeft = duration * 60;
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        const el = document.getElementById('timer');
+        el.textContent = `\u23f1 ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        if (timeLeft <= 60) el.className = 'timer critical';
+        else if (timeLeft <= 300) el.className = 'timer warning';
+        if (timeLeft <= 0) { clearInterval(timerInterval); submitAssessment(); }
+    }, 1000);
+}
+
+// ═══ Anti-Cheat ═══
+function startAntiCheat() {
+    document.addEventListener('copy', e => e.preventDefault());
+    document.addEventListener('paste', e => e.preventDefault());
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey && ['c','v','a','u','s','p'].includes(e.key.toLowerCase())) e.preventDefault();
+        if (e.key === 'F12') e.preventDefault();
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            tabViolations++;
+            if (tabViolations === 1) {
+                document.getElementById('violation-bar').style.display = 'block';
+                showToast('\u26a0 Tab switch detected! Next time = auto-submit');
+            } else if (tabViolations >= 2) {
+                showToast('\U0001f6ab Force-submitting due to tab switches');
+                submitAssessment();
+            }
+        }
+    });
+    // Disable text selection
+    document.body.style.userSelect = 'none';
+    document.body.style.webkitUserSelect = 'none';
+}
+
+// ═══ Submit ═══
+async function submitAssessment() {
+    clearInterval(timerInterval);
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn').textContent = '\u23f3 Submitting...';
+
+    try {
+        const res = await fetch('/api/assess/submit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({token: TOKEN, candidate_id: candidateId, answers: answers}),
+        });
+        const data = await res.json();
+        showResult(data);
+    } catch(e) {
+        showToast('Error submitting. Please try again.');
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('submit-btn').textContent = '\u2705 Submit Assessment';
+    }
+}
+
+function showResult(data) {
+    document.getElementById('assess-screen').style.display = 'none';
+    document.getElementById('timer').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'block';
+    const cls = data.decision === 'PASS' ? 'pass' : 'fail';
+    const msg = data.decision === 'PASS'
+        ? '<p style="color:#10B981;font-size:1.2rem;font-weight:700;margin-top:1rem">\U0001f389 Congratulations! You PASSED!</p><p style="color:#64748B;margin-top:.5rem">The recruitment team will contact you for the interview.</p>'
+        : '<p style="color:#64748B;font-size:1.1rem;margin-top:1rem">Thank you for your time. The recruitment team will be in touch.</p>';
+    document.getElementById('result-content').innerHTML = `
+        <div class="score ${cls}">${data.score_percent}%</div>
+        <p style="color:#94A3B8">${data.correct}/${data.total} correct</p>
+        ${msg}
+        <p style="margin-top:2rem;color:#94A3B8;font-size:.85rem">You may close this page now.</p>
+    `;
+}
+
+function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+</script>
+</body>
+</html>
