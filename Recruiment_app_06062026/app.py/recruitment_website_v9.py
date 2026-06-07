@@ -2913,8 +2913,19 @@ else:
                             st.json({"candidate_id": c_id, "ats_score": result["ats_score"], "decision": result["decision"],
                                      "matched_skills": result["matched_skills"], "missing_skills": result["missing_skills"]})
                         st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
+                        # if dec == "PASS":
+                        #     add_log(c_id, "ATS_SCREENING", "PASS", result["ats_score"], result["reasoning_summary"], "Send Assessment (Auto)")
+                        #     with st.spinner("⚡ Sending assessment invitation..."):
+                        #         actions = auto_pipeline_action(candidate_data, "ats_pass")
+                        #     candidate_data["status"] = "Assessment Sent"
+                        #     st.session_state.candidates[c_id] = candidate_data
+                        #     db.save_candidate(candidate_data)
+                        #     show_automation_results(actions)
+                        #     st.info("👉 Navigate to **📝 Assessment** page to proceed.")
                         if dec == "PASS":
                             add_log(c_id, "ATS_SCREENING", "PASS", result["ats_score"], result["reasoning_summary"], "Send Assessment (Auto)")
+                            if st.session_state.get("_custom_assessment"):
+                                db.save_custom_assessment(c_id, role_applied, json.dumps(st.session_state["_custom_assessment"]))
                             with st.spinner("⚡ Sending assessment invitation..."):
                                 actions = auto_pipeline_action(candidate_data, "ats_pass")
                             candidate_data["status"] = "Assessment Sent"
@@ -3029,6 +3040,8 @@ else:
                         email_status = "—"
                         if dec == "PASS":
                             add_log(c_id, "ATS_SCREENING", "PASS", result["ats_score"], result["reasoning_summary"], "Send Assessment (Auto)")
+                            if st.session_state.get("_custom_assessment"):
+                                db.save_custom_assessment(c_id, batch_role, json.dumps(st.session_state["_custom_assessment"]))
                             if det_email:
                                 actions = auto_pipeline_action(candidate_data, "ats_pass")
                                 candidate_data["status"] = "Assessment Sent"
