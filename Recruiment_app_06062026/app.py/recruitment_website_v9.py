@@ -2094,7 +2094,7 @@ else:
 
         # Check if already submitted
         if cand.get("assessment_result"):
-            st.success("✅ You have already submitted your assessment. Thank you!")
+            st.success("✅ You have submitted your assessment. Thank you!")
             st.info("You may close this page now. The recruitment team will contact you with next steps.")
             st.stop()
 
