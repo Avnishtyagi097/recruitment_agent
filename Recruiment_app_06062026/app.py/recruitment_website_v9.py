@@ -2316,13 +2316,12 @@ else:
         if not st.session_state.assessment_submitted:
             # ═══ ANTI-CHEAT: Timer ═══
             import math
+            # ═══ ANTI-CHEAT: Timer (visual JS countdown, no page reload) ═══
             start_str = st.session_state.get("assessment_start_time", "")
             if start_str:
                 start_dt = datetime.strptime(start_str, "%Y-%m-%d %H:%M:%S")
                 elapsed = (datetime.now() - start_dt).total_seconds()
                 remaining = max(0, 20 * 60 - elapsed)
-                mins_left = int(remaining // 60)
-                secs_left = int(remaining % 60)
 
                 if remaining <= 0:
                     # TIME UP — auto submit
@@ -2348,17 +2347,97 @@ else:
                     st.warning("⏰ Time expired! Your assessment has been auto-submitted.")
                     st.rerun()
 
-                # Timer display
-                if remaining > 300:
-                    st.info(f"⏱️ Time Remaining: **{mins_left:02d}:{secs_left:02d}** | Questions: {len(questions)}")
-                elif remaining > 60:
-                    st.warning(f"⚠️ Hurry! Only **{mins_left:02d}:{secs_left:02d}** remaining!")
-                else:
-                    st.error(f"🔴 LAST MINUTE! **{mins_left:02d}:{secs_left:02d}** — Submit NOW!")
-
-                # Auto-refresh every 30 seconds to update timer
+                # Visual JS countdown timer (ticks every second, NO page reload)
                 import streamlit.components.v1 as components
-                components.html("""<script>setTimeout(function(){ window.parent.location.reload(); }, 30000);</script>""", height=0)
+                components.html(f"""
+                <div id="timer-box" style="
+                    position:fixed; top:10px; right:10px; z-index:99999;
+                    background:linear-gradient(135deg,#1E293B,#0F172A);
+                    color:#F1F5F9; padding:12px 24px; border-radius:14px;
+                    font-family:'Courier New',monospace; font-size:1.3rem; font-weight:800;
+                    box-shadow:0 6px 25px rgba(0,0,0,0.4); border:2px solid #334155;
+                    text-align:center; min-width:220px;">
+                    ⏱️ <span id="mm">--</span>:<span id="ss">--</span>
+                </div>
+                <script>
+                    let t = {int(remaining)};
+                    const mm = document.getElementById('mm');
+                    const ss = document.getElementById('ss');
+                    const box = document.getElementById('timer-box');
+                    function tick() {{
+                        t--;
+                        if (t < 0) t = 0;
+                        let m = Math.floor(t/60), s = t%60;
+                        mm.textContent = String(m).padStart(2,'0');
+                        ss.textContent = String(s).padStart(2,'0');
+                        if (t <= 60) {{
+                            box.style.background = 'linear-gradient(135deg,#991B1B,#7F1D1D)';
+                            box.style.borderColor = '#EF4444';
+                        }} else if (t <= 300) {{
+                            box.style.background = 'linear-gradient(135deg,#92400E,#78350F)';
+                            box.style.borderColor = '#F59E0B';
+                        }}
+                        if (t <= 0) {{
+                            box.innerHTML = '⏰ TIME UP — Submitting...';
+                            // Click the Submit button automatically
+                            try {{
+                                let btns = parent.document.querySelectorAll('button');
+                                for (let b of btns) {{
+                                    if (b.textContent.includes('Submit Assessment')) {{
+                                        b.click();
+                                        break;
+                                    }}
+                                }}
+                            }} catch(e) {{}}
+                        }}
+                    }}
+                    tick();
+                    setInterval(tick, 1000);
+                </script>
+                """, height=0)
+            # start_str = st.session_state.get("assessment_start_time", "")
+            # if start_str:
+            #     start_dt = datetime.strptime(start_str, "%Y-%m-%d %H:%M:%S")
+            #     elapsed = (datetime.now() - start_dt).total_seconds()
+            #     remaining = max(0, 20 * 60 - elapsed)
+            #     mins_left = int(remaining // 60)
+            #     secs_left = int(remaining % 60)
+
+            #     if remaining <= 0:
+            #         # TIME UP — auto submit
+            #         st.session_state.assessment_submitted = True
+            #         result = score_assessment(questions, st.session_state.assessment_answers)
+            #         decision = "PASS" if result["score_percent"] > 90 else "FAIL"
+            #         result["decision"] = decision
+            #         cand["assessment_result"] = result
+            #         cand["status"] = "Passed Assessment" if decision == "PASS" else "Failed Assessment"
+            #         st.session_state.candidates[cid] = cand
+            #         db.save_candidate(cand)
+            #         db.save_assessment_result(cid, result, cand["status"])
+            #         add_log(cid, "ASSESSMENT", decision, result["score_percent"],
+            #             f"Auto-submitted (time expired). {result['correct']}/{result['total']}",
+            #             "Interview" if decision == "PASS" else "Rejection")
+            #         if decision == "PASS":
+            #             auto_pipeline_action(cand, "assessment_pass")
+            #             cand["status"] = "Interview Scheduled"
+            #         else:
+            #             auto_pipeline_action(cand, "assessment_fail")
+            #         st.session_state.candidates[cid] = cand
+            #         db.save_candidate(cand)
+            #         st.warning("⏰ Time expired! Your assessment has been auto-submitted.")
+            #         st.rerun()
+
+            #     # Timer display
+            #     if remaining > 300:
+            #         st.info(f"⏱️ Time Remaining: **{mins_left:02d}:{secs_left:02d}** | Questions: {len(questions)}")
+            #     elif remaining > 60:
+            #         st.warning(f"⚠️ Hurry! Only **{mins_left:02d}:{secs_left:02d}** remaining!")
+            #     else:
+            #         st.error(f"🔴 LAST MINUTE! **{mins_left:02d}:{secs_left:02d}** — Submit NOW!")
+
+            #     # Auto-refresh every 30 seconds to update timer
+            #     import streamlit.components.v1 as components
+            #     components.html("""<script>setTimeout(function(){ window.parent.location.reload(); }, 30000);</script>""", height=0)
 
             # ═══ ANTI-CHEAT: Tab switch detection + copy block ═══
             if "tab_violations" not in st.session_state:
