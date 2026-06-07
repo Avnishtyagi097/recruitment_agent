@@ -10,6 +10,7 @@ import pandas as pd
 import db_manager as db
 import time
 import base64
+from anti_cheat import render_anti_cheat
 from datetime import datetime, timedelta
 from collections import Counter
 from io import BytesIO
@@ -2122,7 +2123,9 @@ else:
 
         # Show questions
         questions = st.session_state.get("assessment_questions", [])
+        # if not st.session_state.assessment_submitted:
         if not st.session_state.assessment_submitted:
+            render_anti_cheat(duration_minutes=20, candidate_name=cand.get("name", "Candidate"))
             st.info(f"⏱️ Started: {st.session_state.get('assessment_start_time','')} | Questions: {len(questions)}")
             for i, q in enumerate(questions):
                 st.markdown(f"**Q{i+1}.** ({q.get('topic','')}) {q['q']}")
@@ -2130,6 +2133,19 @@ else:
                 if answer is not None:
                     st.session_state.assessment_answers[str(i)] = q["options"].index(answer)
                 st.markdown("---")
+        
+        # if not st.session_state.assessment_submitted:
+        #     render_anti_cheat(duration_minutes=20, candidate_name=cand.get("name", "Candidate"))  # ← ADD THIS
+        #     st.info(f"⏱️ Started: {st.session_state.get('assessment_start_time','')} | Questions: {len(questions)}")
+
+            
+        #     st.info(f"⏱️ Started: {st.session_state.get('assessment_start_time','')} | Questions: {len(questions)}")
+        #     for i, q in enumerate(questions):
+        #         st.markdown(f"**Q{i+1}.** ({q.get('topic','')}) {q['q']}")
+        #         answer = st.radio(f"Answer Q{i+1}:", q["options"], key=f"cand_q_{i}", index=None, label_visibility="collapsed")
+        #         if answer is not None:
+        #             st.session_state.assessment_answers[str(i)] = q["options"].index(answer)
+        #         st.markdown("---")
 
             answered = len(st.session_state.assessment_answers)
             st.progress(answered / len(questions))
