@@ -2262,6 +2262,7 @@ else:
 
             if st.button("✅ Submit Assessment", type="primary", use_container_width=True, key="cand_submit_assess"):
                 # ... your existing submit code stays the same
+                # ... your existing submit code stays the same
         # if not st.session_state.assessment_submitted:
         # if not st.session_state.assessment_submitted:
         #     render_anti_cheat(duration_minutes=20, candidate_name=cand.get("name", "Candidate"))
