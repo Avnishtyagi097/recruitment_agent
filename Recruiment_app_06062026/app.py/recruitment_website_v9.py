@@ -2112,7 +2112,15 @@ else:
             By clicking Start, you agree to the assessment policies.
             """)
             if st.button("🚀 Start Assessment", type="primary", use_container_width=True, key="cand_start_assess"):
-                questions = get_assessment_questions(cand["role"], 30)
+                # questions = get_assessment_questions(cand["role"], 30)
+                
+                custom_qs = db.get_custom_assessment(cid)
+                if custom_qs and len(custom_qs) >= 5:
+                    questions = custom_qs
+                    random.shuffle(questions)
+                    questions = questions[:30]
+                else:
+                    questions = get_assessment_questions(cand["role"], 30)
                 st.session_state.assessment_questions = questions
                 st.session_state.assessment_started = True
                 st.session_state.assessment_answers = {}
@@ -2745,7 +2753,106 @@ else:
                     jd_text = st.text_area("Enter Job Description", height=400, key="single_jd_custom")
                 with st.expander("ℹ️ Scoring Methodology"):
                     st.markdown("""| Component | Weight |\n|---|---|\n| Skill Match | 40% |\n| Experience | 20% |\n| Education | 15% |\n| Certifications | 10% |\n| Tools / Platforms | 15% |\n\n**Pass: > 85%** · Borderline (75–85%) = human review""")
-                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)            
+            # Custom Assessment (Optional)
+            with st.expander("📋 Custom Assessment (Optional)", expanded=False):
+                st.markdown("Upload your own assessment or use the built-in role-specific questions.")
+                assess_mode = st.radio(
+                    "Assessment Type",
+                    ["🤖 Built-in (Auto-generated)", "📤 Upload JSON", "📊 Upload CSV", "✍️ Add Manually"],
+                    horizontal=True, key="assess_mode_radio"
+                )
+                custom_questions = None
+
+                if assess_mode == "📤 Upload JSON":
+                    st.markdown("**Format:** List of objects with `q`, `options` (4 items), `answer` (0-3 index), `topic`, `difficulty`")
+                    st.code('[{"q": "Question?", "options": ["A","B","C","D"], "answer": 0, "topic": "SQL", "difficulty": "easy"}]', language="json")
+                    json_file = st.file_uploader("Upload JSON", type=["json"], key="assess_json")
+                    if json_file:
+                        try:
+                            parsed = json.loads(json_file.read().decode("utf-8"))
+                            if isinstance(parsed, list) and len(parsed) > 0:
+                                valid = all("q" in q and "options" in q and "answer" in q for q in parsed)
+                                if valid:
+                                    custom_questions = parsed
+                                    st.success(f"✅ Loaded {len(parsed)} questions")
+                                    for i, q in enumerate(parsed[:3]):
+                                        st.markdown(f"**Q{i+1}.** {q['q']} *(Answer: {['A','B','C','D'][q['answer']]})*")
+                                    if len(parsed) > 3:
+                                        st.caption(f"...and {len(parsed)-3} more")
+                                else:
+                                    st.error("❌ Each question needs: q, options, answer")
+                        except:
+                            st.error("❌ Invalid JSON file")
+
+                elif assess_mode == "📊 Upload CSV":
+                    st.markdown("**Columns:** question, option_a, option_b, option_c, option_d, correct_answer (A/B/C/D), topic, difficulty")
+                    csv_file = st.file_uploader("Upload CSV", type=["csv"], key="assess_csv")
+                    if csv_file:
+                        try:
+                            df = pd.read_csv(csv_file)
+                            required = ["question", "option_a", "option_b", "option_c", "option_d", "correct_answer"]
+                            if all(c in df.columns for c in required):
+                                amap = {"A": 0, "B": 1, "C": 2, "D": 3}
+                                parsed = []
+                                for _, r in df.iterrows():
+                                    parsed.append({
+                                        "q": str(r["question"]),
+                                        "options": [str(r["option_a"]), str(r["option_b"]), str(r["option_c"]), str(r["option_d"])],
+                                        "answer": amap.get(str(r["correct_answer"]).strip().upper(), 0),
+                                        "topic": str(r.get("topic", "General")),
+                                        "difficulty": str(r.get("difficulty", "medium")),
+                                    })
+                                custom_questions = parsed
+                                st.success(f"✅ Loaded {len(parsed)} questions from CSV")
+                                st.dataframe(df.head(3), use_container_width=True, hide_index=True)
+                            else:
+                                missing = [c for c in required if c not in df.columns]
+                                st.error(f"❌ Missing columns: {', '.join(missing)}")
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+
+                elif assess_mode == "✍️ Add Manually":
+                    if "manual_questions" not in st.session_state:
+                        st.session_state["manual_questions"] = []
+                    with st.form("add_q_form", clear_on_submit=True):
+                        mq = st.text_input("Question *")
+                        mc1, mc2 = st.columns(2)
+                        with mc1:
+                            oa = st.text_input("Option A *")
+                            ob = st.text_input("Option B *")
+                        with mc2:
+                            oc = st.text_input("Option C *")
+                            od = st.text_input("Option D *")
+                        mc3, mc4 = st.columns(2)
+                        with mc3:
+                            correct = st.selectbox("Correct Answer", ["A", "B", "C", "D"])
+                        with mc4:
+                            topic = st.text_input("Topic (optional)", value="General")
+                        if st.form_submit_button("➕ Add Question", type="primary"):
+                            if mq and oa and ob and oc and od:
+                                st.session_state["manual_questions"].append({
+                                    "q": mq, "options": [oa, ob, oc, od],
+                                    "answer": {"A":0,"B":1,"C":2,"D":3}[correct],
+                                    "topic": topic or "General", "difficulty": "medium"
+                                })
+                            else:
+                                st.warning("Fill all required fields")
+                    if st.session_state.get("manual_questions"):
+                        mqs = st.session_state["manual_questions"]
+                        st.success(f"✅ {len(mqs)} question(s) added")
+                        for i, q in enumerate(mqs):
+                            st.markdown(f"**Q{i+1}.** {q['q']} *(Answer: {['A','B','C','D'][q['answer']]})*")
+                        custom_questions = mqs
+                        if st.button("🗑️ Clear All", key="clear_manual"):
+                            st.session_state["manual_questions"] = []
+                            st.rerun()
+
+                if custom_questions:
+                    st.session_state["_custom_assessment"] = custom_questions
+                    st.info(f"📋 **{len(custom_questions)} custom questions** will be used for this candidate.")
+                else:
+                    st.session_state["_custom_assessment"] = None                
             st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
             if st.button("🔍 Analyze CV & Generate ATS Score", type="primary", use_container_width=True, key="single_analyze_btn"):
                 if not c_name: st.error("❌ Please enter the candidate's name.")
@@ -3053,8 +3160,16 @@ else:
                     st.markdown("**30 MCQs • 20 min • Pass: > 90%**\n\n\u26a0\ufe0f No tab switching, copy-paste monitored.")
 
                 if not st.session_state.assessment_started:
+                    # if st.button("\U0001f680 Start Assessment", type="primary", use_container_width=True):
+                        # st.session_state.assessment_questions = get_assessment_questions(cand["role"], 30)
                     if st.button("\U0001f680 Start Assessment", type="primary", use_container_width=True):
-                        st.session_state.assessment_questions = get_assessment_questions(cand["role"], 30)
+                        custom_qs = db.get_custom_assessment(cid)
+                        if custom_qs and len(custom_qs) >= 5:
+                            questions = custom_qs
+                            random.shuffle(questions)
+                            st.session_state.assessment_questions = questions[:30]
+                        else:
+                            st.session_state.assessment_questions = get_assessment_questions(cand["role"], 30)    
                         st.session_state.assessment_started = True
                         st.session_state.assessment_answers = {}
                         st.session_state.assessment_submitted = False
