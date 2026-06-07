@@ -2122,6 +2122,195 @@ else:
             st.stop()
 
         # Show questions
+        # questions = st.session_state.get("assessment_questions", [])
+
+        # if not st.session_state.assessment_submitted:
+        #     # ═══ ANTI-CHEAT: Timer ═══
+        #     import math
+        #     start_str = st.session_state.get("assessment_start_time", "")
+        #     if start_str:
+        #         start_dt = datetime.strptime(start_str, "%Y-%m-%d %H:%M:%S")
+        #         elapsed = (datetime.now() - start_dt).total_seconds()
+        #         remaining = max(0, 20 * 60 - elapsed)
+        #         mins_left = int(remaining // 60)
+        #         secs_left = int(remaining % 60)
+
+        #         if remaining <= 0:
+        #             # TIME UP — auto submit
+        #             st.session_state.assessment_submitted = True
+        #             result = score_assessment(questions, st.session_state.assessment_answers)
+        #             decision = "PASS" if result["score_percent"] > 90 else "FAIL"
+        #             result["decision"] = decision
+        #             cand["assessment_result"] = result
+        #             cand["status"] = "Passed Assessment" if decision == "PASS" else "Failed Assessment"
+        #             st.session_state.candidates[cid] = cand
+        #             db.save_candidate(cand)
+        #             db.save_assessment_result(cid, result, cand["status"])
+        #             add_log(cid, "ASSESSMENT", decision, result["score_percent"],
+        #                 f"Auto-submitted (time expired). {result['correct']}/{result['total']}",
+        #                 "Interview" if decision == "PASS" else "Rejection")
+        #             if decision == "PASS":
+        #                 auto_pipeline_action(cand, "assessment_pass")
+        #                 cand["status"] = "Interview Scheduled"
+        #             else:
+        #                 auto_pipeline_action(cand, "assessment_fail")
+        #             st.session_state.candidates[cid] = cand
+        #             db.save_candidate(cand)
+        #             st.warning("⏰ Time expired! Your assessment has been auto-submitted.")
+        #             st.rerun()
+
+        #         # Timer display
+        #         if remaining > 300:
+        #             st.info(f"⏱️ Time Remaining: **{mins_left:02d}:{secs_left:02d}** | Questions: {len(questions)}")
+        #         elif remaining > 60:
+        #             st.warning(f"⚠️ Hurry! Only **{mins_left:02d}:{secs_left:02d}** remaining!")
+        #         else:
+        #             st.error(f"🔴 LAST MINUTE! **{mins_left:02d}:{secs_left:02d}** — Submit NOW!")
+
+        #         # Auto-refresh every 30 seconds to update timer
+        #         import streamlit.components.v1 as components
+        #         components.html(f"""<script>setTimeout(function(){{ 
+        #             window.parent.document.querySelector('[data-testid="stApp"]').__streamlitWebsocket && 
+        #             window.parent.location.reload(); 
+        #         }}, 30000);</script>""", height=0)
+
+        #     # ═══ ANTI-CHEAT: Tab switch detection + copy block ═══
+        #     if "tab_violations" not in st.session_state:
+        #         st.session_state["tab_violations"] = 0
+
+        #     import streamlit.components.v1 as components
+        #     components.html("""
+        #     <script>
+        #     // Block copy/paste/right-click
+        #     parent.document.addEventListener('copy', e => e.preventDefault());
+        #     parent.document.addEventListener('paste', e => e.preventDefault());
+        #     parent.document.addEventListener('contextmenu', e => e.preventDefault());
+        #     parent.document.addEventListener('keydown', function(e) {
+        #         if (e.ctrlKey && ['c','v','a','u','s','p'].includes(e.key.toLowerCase())) e.preventDefault();
+        #         if (e.key === 'F12') e.preventDefault();
+        #         if (e.ctrlKey && e.shiftKey && ['i','j'].includes(e.key.toLowerCase())) e.preventDefault();
+        #     });
+        #     // Text selection disabled
+        #     let s = parent.document.createElement('style');
+        #     s.textContent = '.stRadio label, .stMarkdown { -webkit-user-select:none!important; user-select:none!important; }';
+        #     parent.document.head.appendChild(s);
+
+        #     // Tab switch detection
+        #     document.addEventListener('visibilitychange', function() {
+        #         if (document.hidden) {
+        #             // Send violation to Streamlit via query param trick
+        #             let url = new URL(parent.window.location);
+        #             let v = parseInt(url.searchParams.get('tv') || '0') + 1;
+        #             url.searchParams.set('tv', v);
+        #             parent.window.history.replaceState({}, '', url);
+        #             parent.window.location.reload();
+        #         }
+        #     });
+        #     </script>
+        #     """, height=0)
+
+        #     # Check tab violation from URL param
+        #     tv = st.query_params.get("tv", "0")
+        #     try:
+        #         tv_count = int(tv)
+        #     except:
+        #         tv_count = 0
+
+        #     if tv_count > st.session_state.get("tab_violations", 0):
+        #         st.session_state["tab_violations"] = tv_count
+
+        #         if tv_count == 1:
+        #             st.error("⚠️ **WARNING:** You switched tabs/windows! This has been recorded. **Next time your test will be auto-submitted.**")
+        #             add_log(cid, "ANTI_CHEAT", "WARNING", tv_count, "Tab switch detected (1st warning)", "Final warning issued")
+
+        #         elif tv_count >= 2:
+        #             # FORCE SUBMIT
+        #             st.session_state.assessment_submitted = True
+        #             result = score_assessment(questions, st.session_state.assessment_answers)
+        #             decision = "PASS" if result["score_percent"] > 90 else "FAIL"
+        #             result["decision"] = decision
+        #             cand["assessment_result"] = result
+        #             cand["status"] = "Passed Assessment" if decision == "PASS" else "Failed Assessment"
+        #             st.session_state.candidates[cid] = cand
+        #             db.save_candidate(cand)
+        #             db.save_assessment_result(cid, result, cand["status"])
+        #             add_log(cid, "ANTI_CHEAT", "FORCE_SUBMIT", tv_count, f"Force-submitted after {tv_count} tab switches", "Flagged for review")
+        #             if decision == "PASS":
+        #                 auto_pipeline_action(cand, "assessment_pass")
+        #                 cand["status"] = "Interview Scheduled"
+        #             else:
+        #                 auto_pipeline_action(cand, "assessment_fail")
+        #             st.session_state.candidates[cid] = cand
+        #             db.save_candidate(cand)
+        #             st.error("🚫 Your test has been **force-submitted** due to multiple tab switches.")
+        #             st.rerun()
+
+        #     if st.session_state.get("tab_violations", 0) == 1:
+        #         st.warning("⚠️ You have **1 tab-switch violation**. One more and your test will be auto-submitted.")
+
+        #     # ═══ Show Questions ═══
+        #     for i, q in enumerate(questions):
+        #         st.markdown(f"**Q{i+1}.** ({q.get('topic','')}) {q['q']}")
+        #         answer = st.radio(f"Answer Q{i+1}:", q["options"], key=f"cand_q_{i}", index=None, label_visibility="collapsed")
+        #         if answer is not None:
+        #             st.session_state.assessment_answers[str(i)] = q["options"].index(answer)
+        #         st.markdown("---")
+
+        #     answered = len(st.session_state.assessment_answers)
+        #     st.progress(answered / len(questions))
+        #     st.markdown(f"**Answered: {answered}/{len(questions)}**")
+
+        #     if st.button("✅ Submit Assessment", type="primary", use_container_width=True, key="cand_submit_assess"):
+               
+
+        #     answered = len(st.session_state.assessment_answers)
+        #     st.progress(answered / len(questions))
+        #     st.markdown(f"**Answered: {answered}/{len(questions)}**")
+
+        #     if st.button("✅ Submit Assessment", type="primary", use_container_width=True, key="cand_submit_assess"):
+        #         st.session_state.assessment_submitted = True
+        #         result = score_assessment(questions, st.session_state.assessment_answers)
+        #         decision = "PASS" if result["score_percent"] > 90 else "FAIL"
+        #         result["decision"] = decision
+
+        #         # Store result in candidate record
+        #         cand["assessment_result"] = result
+        #         cand["status"] = "Passed Assessment" if decision == "PASS" else "Failed Assessment"
+                
+                
+        #         st.session_state.candidates[cid] = cand
+        #         db.save_candidate(cand)                                  # ← saves to db_manager's candidates table
+        #         db.save_assessment_result(cid, result, cand["status"])   # ← updates assessment columns
+
+                
+
+        #         # Log it
+        #         add_log(cid, "ASSESSMENT", decision, result["score_percent"],
+        #             f"Score: {result['correct']}/{result['total']} ({result['score_percent']}%)",
+        #             "Move to Interview" if decision == "PASS" else "Send Rejection")
+
+        #         # Auto-trigger email pipeline
+        #         if decision == "PASS":
+        #             auto_pipeline_action(cand, "assessment_pass")
+        #             cand["status"] = "Interview Scheduled"
+        #         else:
+        #             auto_pipeline_action(cand, "assessment_fail")
+        #         st.session_state.candidates[cid] = cand
+        #         st.rerun()
+        
+
+        # else:
+        #     # Show results after submission
+        #     result = cand.get("assessment_result", {})
+        #     if isinstance(result, str):
+        #         try:
+        #             result = json.loads(result)
+        #         except Exception:
+        #             result = {}
+        #     if not isinstance(result, dict):
+
+
+        # Show questions
         questions = st.session_state.get("assessment_questions", [])
 
         if not st.session_state.assessment_submitted:
@@ -2169,10 +2358,7 @@ else:
 
                 # Auto-refresh every 30 seconds to update timer
                 import streamlit.components.v1 as components
-                components.html(f"""<script>setTimeout(function(){{ 
-                    window.parent.document.querySelector('[data-testid="stApp"]').__streamlitWebsocket && 
-                    window.parent.location.reload(); 
-                }}, 30000);</script>""", height=0)
+                components.html("""<script>setTimeout(function(){ window.parent.location.reload(); }, 30000);</script>""", height=0)
 
             # ═══ ANTI-CHEAT: Tab switch detection + copy block ═══
             if "tab_violations" not in st.session_state:
@@ -2181,24 +2367,21 @@ else:
             import streamlit.components.v1 as components
             components.html("""
             <script>
-            // Block copy/paste/right-click
-            parent.document.addEventListener('copy', e => e.preventDefault());
-            parent.document.addEventListener('paste', e => e.preventDefault());
-            parent.document.addEventListener('contextmenu', e => e.preventDefault());
-            parent.document.addEventListener('keydown', function(e) {
-                if (e.ctrlKey && ['c','v','a','u','s','p'].includes(e.key.toLowerCase())) e.preventDefault();
-                if (e.key === 'F12') e.preventDefault();
-                if (e.ctrlKey && e.shiftKey && ['i','j'].includes(e.key.toLowerCase())) e.preventDefault();
-            });
-            // Text selection disabled
-            let s = parent.document.createElement('style');
-            s.textContent = '.stRadio label, .stMarkdown { -webkit-user-select:none!important; user-select:none!important; }';
-            parent.document.head.appendChild(s);
-
-            // Tab switch detection
+            try {
+                parent.document.addEventListener('copy', e => e.preventDefault());
+                parent.document.addEventListener('paste', e => e.preventDefault());
+                parent.document.addEventListener('contextmenu', e => e.preventDefault());
+                parent.document.addEventListener('keydown', function(e) {
+                    if (e.ctrlKey && ['c','v','a','u','s','p'].includes(e.key.toLowerCase())) e.preventDefault();
+                    if (e.key === 'F12') e.preventDefault();
+                    if (e.ctrlKey && e.shiftKey && ['i','j'].includes(e.key.toLowerCase())) e.preventDefault();
+                });
+                let s = parent.document.createElement('style');
+                s.textContent = '.stRadio label, .stMarkdown { -webkit-user-select:none!important; user-select:none!important; }';
+                parent.document.head.appendChild(s);
+            } catch(err) {}
             document.addEventListener('visibilitychange', function() {
                 if (document.hidden) {
-                    // Send violation to Streamlit via query param trick
                     let url = new URL(parent.window.location);
                     let v = parseInt(url.searchParams.get('tv') || '0') + 1;
                     url.searchParams.set('tv', v);
@@ -2261,89 +2444,26 @@ else:
             st.markdown(f"**Answered: {answered}/{len(questions)}**")
 
             if st.button("✅ Submit Assessment", type="primary", use_container_width=True, key="cand_submit_assess"):
-                # ... your existing submit code stays the same
-                # ... your existing submit code stays the same
-        # if not st.session_state.assessment_submitted:
-        # if not st.session_state.assessment_submitted:
-        #     render_anti_cheat(duration_minutes=20, candidate_name=cand.get("name", "Candidate"))
-        #     st.info(f"⏱️ Started: {st.session_state.get('assessment_start_time','')} | Questions: {len(questions)}")
-        #     for i, q in enumerate(questions):
-        #         st.markdown(f"**Q{i+1}.** ({q.get('topic','')}) {q['q']}")
-        #         answer = st.radio(f"Answer Q{i+1}:", q["options"], key=f"cand_q_{i}", index=None, label_visibility="collapsed")
-        #         if answer is not None:
-        #             st.session_state.assessment_answers[str(i)] = q["options"].index(answer)
-        #         st.markdown("---")
-        
-        # if not st.session_state.assessment_submitted:
-        #     render_anti_cheat(duration_minutes=20, candidate_name=cand.get("name", "Candidate"))  # ← ADD THIS
-        #     st.info(f"⏱️ Started: {st.session_state.get('assessment_start_time','')} | Questions: {len(questions)}")
-
-            
-        #     st.info(f"⏱️ Started: {st.session_state.get('assessment_start_time','')} | Questions: {len(questions)}")
-        #     for i, q in enumerate(questions):
-        #         st.markdown(f"**Q{i+1}.** ({q.get('topic','')}) {q['q']}")
-        #         answer = st.radio(f"Answer Q{i+1}:", q["options"], key=f"cand_q_{i}", index=None, label_visibility="collapsed")
-        #         if answer is not None:
-        #             st.session_state.assessment_answers[str(i)] = q["options"].index(answer)
-        #         st.markdown("---")
-
-            answered = len(st.session_state.assessment_answers)
-            st.progress(answered / len(questions))
-            st.markdown(f"**Answered: {answered}/{len(questions)}**")
-
-            if st.button("✅ Submit Assessment", type="primary", use_container_width=True, key="cand_submit_assess"):
                 st.session_state.assessment_submitted = True
                 result = score_assessment(questions, st.session_state.assessment_answers)
                 decision = "PASS" if result["score_percent"] > 90 else "FAIL"
                 result["decision"] = decision
-
-                # Store result in candidate record
                 cand["assessment_result"] = result
                 cand["status"] = "Passed Assessment" if decision == "PASS" else "Failed Assessment"
-                # st.session_state.candidates[cid] = cand
-                
-                # try:
-                #     db_save_assessment_result(cid, json.dumps(result), cand["status"])
-                # except Exception:
-                #     pass
-                
                 st.session_state.candidates[cid] = cand
-                db.save_candidate(cand)                                  # ← saves to db_manager's candidates table
-                db.save_assessment_result(cid, result, cand["status"])   # ← updates assessment columns
-
-                
-
-                # Log it
+                db.save_candidate(cand)
+                db.save_assessment_result(cid, result, cand["status"])
                 add_log(cid, "ASSESSMENT", decision, result["score_percent"],
                     f"Score: {result['correct']}/{result['total']} ({result['score_percent']}%)",
                     "Move to Interview" if decision == "PASS" else "Send Rejection")
-
-                # Auto-trigger email pipeline
                 if decision == "PASS":
                     auto_pipeline_action(cand, "assessment_pass")
                     cand["status"] = "Interview Scheduled"
                 else:
                     auto_pipeline_action(cand, "assessment_fail")
                 st.session_state.candidates[cid] = cand
+                db.save_candidate(cand)
                 st.rerun()
-        # else:
-        #     # Show results after submission
-        #     # result = cand.get("assessment_result", {})
-        #     # decision = result.get("decision", "FAIL")
-        #     result = cand.get("assessment_result", {})
-            
-        #     if isinstance(result, str):
-        #         try:
-        #             result = json.loads(result)
-        #         except Exception:
-        #             result = {}
-        #     if not isinstance(result, dict):
-        #         result = {}
-
-        #     if isinstance(result, str):
-        #         result = json.loads(result)
-        #     decision = result.get("decision", "FAIL") if isinstance(result, dict) else "FAIL"
-        #     score = result.get("score_percent", 0)
 
         else:
             # Show results after submission
@@ -2354,6 +2474,21 @@ else:
                 except Exception:
                     result = {}
             if not isinstance(result, dict):
+                result = {}
+            decision = result.get("decision", "FAIL")
+            score = result.get("score_percent", 0)
+
+            if decision == "PASS":
+                st.success(f"🎉 Congratulations! You scored **{score}%** — You PASSED!")
+                st.info("The recruitment team will contact you shortly to schedule your interview.")
+            else:
+                st.info("Thank you for your time. The recruitment team will be in touch.")
+
+            st.markdown("---")
+            st.caption("You may close this page now.")
+
+        st.stop()
+    # ═══ END CANDIDATE MODE ═══
                 result = {}
             decision = result.get("decision", "FAIL")
             score = result.get("score_percent", 0)
