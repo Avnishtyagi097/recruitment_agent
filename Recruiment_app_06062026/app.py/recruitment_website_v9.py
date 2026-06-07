@@ -2089,7 +2089,7 @@ else:
         st.markdown(f"""
         <div style="background:linear-gradient(135deg,#4F46E5,#7C3AED); color:white; padding:1.5rem 2rem; border-radius:16px; margin-bottom:2rem;">
             <h2 style="margin:0; color:white;">📝 Assessment: {cand.get('role', 'Role')}</h2>
-            <p style="margin:0.5rem 0 0; opacity:0.9;">Candidate: {cand.get('name', '')} | 30 Questions | 20 Minutes</p>
+            <p style="margin:0.5rem 0 0; opacity:0.9;">Candidate: {cand.get('name', '')} | {len(st.session_state.get('assessment_questions', []) or ['?']*30)} Questions | {cand.get('assess_duration', 20)} Minutes</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -2329,7 +2329,9 @@ else:
             if start_str:
                 start_dt = datetime.strptime(start_str, "%Y-%m-%d %H:%M:%S")
                 elapsed = (datetime.now() - start_dt).total_seconds()
-                remaining = max(0, 20 * 60 - elapsed)
+                # remaining = max(0, 20 * 60 - elapsed)
+                duration_mins = cand.get("assess_duration", 20)
+                remaining = max(0, duration_mins * 60 - elapsed)
 
                 if remaining <= 0:
                     # TIME UP — auto submit
@@ -2848,11 +2850,21 @@ else:
                             st.session_state["manual_questions"] = []
                             st.rerun()
 
+                # if custom_questions:
+                #     st.session_state["_custom_assessment"] = custom_questions
+                #     st.info(f"📋 **{len(custom_questions)} custom questions** will be used for this candidate.")
+                # else:
+                #     st.session_state["_custom_assessment"] = None  
+                # Assessment duration setting
+                st.markdown("---")
+                assess_duration = st.number_input("⏱️ Assessment Duration (minutes)", min_value=5, max_value=120, value=20, step=5, key="assess_duration_input")
+                st.session_state["_assess_duration"] = assess_duration
+
                 if custom_questions:
                     st.session_state["_custom_assessment"] = custom_questions
-                    st.info(f"📋 **{len(custom_questions)} custom questions** will be used for this candidate.")
+                    st.info(f"📋 **{len(custom_questions)} custom questions** | **{assess_duration} minutes** will be used for this candidate.")
                 else:
-                    st.session_state["_custom_assessment"] = None                
+                    st.session_state["_custom_assessment"] = None              
             st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
             if st.button("🔍 Analyze CV & Generate ATS Score", type="primary", use_container_width=True, key="single_analyze_btn"):
                 if not c_name: st.error("❌ Please enter the candidate's name.")
@@ -2867,6 +2879,15 @@ else:
                     else:
                         with st.spinner("🔄 Analyzing CV..."):
                             result = calculate_ats_score(cv_text, jd_text, role_applied)
+                        # candidate_data = {
+                        #     "id": c_id, "name": c_name, "email": c_email, "role": role_applied,
+                        #     "cv_text": cv_text[:500] + "..." if len(cv_text) > 500 else cv_text,
+                        #     "ats_result": result,
+                        #     "status": "Passed ATS" if result["decision"] == "PASS" else ("Manual Review" if result["requires_human_review"] else "Failed ATS"),
+                        #     "assessment_result": None, "interview_scheduled": False, "emails_sent": [],
+                        #     "interview_slots": [], "interview_panel": [],
+                        #     "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        # }
                         candidate_data = {
                             "id": c_id, "name": c_name, "email": c_email, "role": role_applied,
                             "cv_text": cv_text[:500] + "..." if len(cv_text) > 500 else cv_text,
@@ -2875,6 +2896,7 @@ else:
                             "assessment_result": None, "interview_scheduled": False, "emails_sent": [],
                             "interview_slots": [], "interview_panel": [],
                             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "assess_duration": st.session_state.get("_assess_duration", 20),
                         }
                         st.session_state.candidates[c_id] = candidate_data
                         db.save_candidate(candidate_data)
@@ -3180,7 +3202,8 @@ else:
                         if custom_qs and len(custom_qs) >= 5:
                             questions = custom_qs
                             random.shuffle(questions)
-                            st.session_state.assessment_questions = questions[:30]
+                            # st.session_state.assessment_questions = questions[:30]
+                            st.session_state.assessment_questions = questions  # Use ALL custom questions
                         else:
                             st.session_state.assessment_questions = get_assessment_questions(cand["role"], 30)    
                         st.session_state.assessment_started = True
