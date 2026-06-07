@@ -92,6 +92,15 @@ def init():
             key TEXT PRIMARY KEY,
             value TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS custom_assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            candidate_id TEXT,
+            role TEXT,
+            questions TEXT NOT NULL,
+            created_by TEXT,
+            created_at TEXT
+        );
     """)
     c.commit()
     c.close()
@@ -370,3 +379,26 @@ def sync_session_to_db(session_state):
     """Save all session_state candidates to SQLite."""
     for cid, cand in session_state.candidates.items():
         save_candidate(cand)
+
+
+
+def save_custom_assessment(candidate_id, role, questions_json, created_by="recruiter"):
+    c = _conn()
+    c.execute(
+        "INSERT OR REPLACE INTO custom_assessments (candidate_id, role, questions, created_by, created_at) VALUES (?,?,?,?,?)",
+        (candidate_id, role, questions_json, created_by, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    )
+    c.commit()
+    c.close()
+
+
+def get_custom_assessment(candidate_id):
+    c = _conn()
+    row = c.execute("SELECT questions FROM custom_assessments WHERE candidate_id = ? ORDER BY id DESC LIMIT 1", (candidate_id,)).fetchone()
+    c.close()
+    if row and row["questions"]:
+        try:
+            return json.loads(row["questions"])
+        except:
+            return None
+    return None        
