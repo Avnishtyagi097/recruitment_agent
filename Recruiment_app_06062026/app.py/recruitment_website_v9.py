@@ -2489,7 +2489,7 @@ else:
 
         st.stop()
     # ═══ END CANDIDATE MODE ═══
-                result = {}
+            result = {}
             decision = result.get("decision", "FAIL")
             score = result.get("score_percent", 0)
 
