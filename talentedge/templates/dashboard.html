@@ -1417,9 +1417,7 @@ async function deleteAccount() {
         else { var d=await res.json(); toast(d.detail||'Failed','error'); }
     } catch(e) { toast('Network error','error'); }
 }
-async function loadSettings() {
-    try {
-        const pRes = await api('/api/settings/profile');
+
 
 
 // ═══ Init ═══
