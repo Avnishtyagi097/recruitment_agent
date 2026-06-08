@@ -114,6 +114,7 @@ tr:hover td{background:#F8FAFC}
         <a onclick="showPage('emails')" data-page="emails">📧 Email Logs</a>
         <a onclick="showPage('interviews')" data-page="interviews">📅 Interviews</a>
         <a onclick="showPage('analytics')" data-page="analytics">📊 Analytics</a>
+        <a onclick="showPage('settings')" data-page="settings">⚙️ Settings</a>
         <a onclick="showPage('assessments')" data-page="assessments">📝 Assessments</a>
     </nav>
     <div class="user-box">
@@ -528,6 +529,59 @@ tr:hover td{background:#F8FAFC}
   </div>
 </div>
 
+<!-- PAGE: SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="banner"><h1>⚙️ Settings</h1><p>Manage your profile, email configuration, and account</p></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+
+    <!-- LEFT COLUMN -->
+    <div>
+      <div class="card">
+        <h3>👤 Profile</h3>
+        <div class="form-group"><label>Full Name</label><input type="text" id="set-name" placeholder="Your name"></div>
+        <div class="form-group"><label>Email <span style="color:#94A3B8;font-size:.8rem">(cannot be changed)</span></label><input type="email" id="set-email" disabled style="background:#F1F5F9;cursor:not-allowed"></div>
+        <div class="form-group"><label>Company Name</label><input type="text" id="set-company" placeholder="Company name"></div>
+        <div class="form-group"><label>Phone Number</label><input type="tel" id="set-phone" placeholder="+91 ..."></div>
+        <div class="form-group"><label>Role</label><input type="text" id="set-role" disabled style="background:#F1F5F9;cursor:not-allowed"></div>
+        <div class="form-group"><label>Member Since</label><input type="text" id="set-since" disabled style="background:#F1F5F9;cursor:not-allowed"></div>
+        <button class="btn btn-primary" onclick="saveProfile()" style="width:100%">💾 Save Profile</button>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem">
+        <h3>🔒 Change Password</h3>
+        <div class="form-group"><label>Current Password</label><input type="password" id="set-curr-pw" placeholder="Enter current password"></div>
+        <div class="form-group"><label>New Password</label><input type="password" id="set-new-pw" placeholder="Min 8 characters"></div>
+        <div class="form-group"><label>Confirm New Password</label><input type="password" id="set-confirm-pw" placeholder="Re-enter new password"></div>
+        <button class="btn btn-primary" onclick="changePassword()" style="width:100%">🔒 Change Password</button>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <div class="card">
+        <h3>📧 Email (SMTP) Configuration</h3>
+        <p style="font-size:.8rem;color:#94A3B8;margin:0 0 1rem">Configure outgoing email for candidate notifications</p>
+        <div class="form-group"><label>SMTP Host</label><input type="text" id="set-smtp-host" placeholder="smtp.gmail.com"></div>
+        <div class="form-group"><label>SMTP Port</label><input type="number" id="set-smtp-port" placeholder="587"></div>
+        <div class="form-group"><label>SMTP Username (Email)</label><input type="email" id="set-smtp-user" placeholder="you@gmail.com"></div>
+        <div class="form-group"><label>SMTP Password / App Password</label><input type="password" id="set-smtp-pw" placeholder="Enter password"></div>
+        <div class="form-group"><label>From Name</label><input type="text" id="set-smtp-from" placeholder="TalentEdge Recruitment"></div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-primary" onclick="saveSMTP()" style="flex:1">💾 Save SMTP</button>
+          <button class="btn btn-outline" onclick="testSMTP()" style="flex:1">📨 Send Test Email</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem;border:2px solid #FCA5A5">
+        <h3 style="color:#DC2626">⚠️ Danger Zone</h3>
+        <p style="font-size:.85rem;color:#64748B;margin:.5rem 0">Permanently delete your account and all associated data. This cannot be undone.</p>
+        <button class="btn btn-danger" onclick="deleteAccount()" style="width:100%">🗑 Delete My Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <script>
@@ -547,6 +601,7 @@ function showPage(name) {
     if (name === 'assessments') loadAssessmentsList();
     if (name === 'interviews') loadInterviews();
     if (name === 'analytics') loadAnalytics();
+    if (name === 'settings') loadSettings();
 }
 
 // ═══ Toast ═══
@@ -1269,6 +1324,98 @@ async function loadAnalytics() {
 
     } catch(e) { console.error('Analytics error:',e); toast('Failed to load analytics','error'); }
 }
+
+// ═══════════════════════════════════════════════════════════
+//  SETTINGS PAGE
+// ═ && pRes.ok) {// ═══════════════════════════════════════════════════════════
+            const p = await pRes.json();
+            document.getElementById('set-name').value = p.full_name || '';
+            document.getElementById('set-email').value = p.email || '';
+            document.getElementById('set-company').value = p.company_name || '';
+            document.getElementById('set-phone').value = p.phone_number || '';
+            document.getElementById('set-role').value = (p.role||'recruiter').charAt(0).toUpperCase() + (p.role||'').slice(1);
+            document.getElementById('set-since').value = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}) : '';
+        }
+        const sRes = await api('/api/settings/smtp');
+        if (sRes && sRes.ok) {
+            const s = await sRes.json();
+            document.getElementById('set-smtp-host').value = s.smtp_host || '';
+            document.getElementById('set-smtp-port').value = s.smtp_port || 587;
+            document.getElementById('set-smtp-user').value = s.smtp_user || '';
+            document.getElementById('set-smtp-pw').placeholder = s.smtp_password_masked ? 'Current: '+s.smtp_password_masked : 'Enter password';
+            document.getElementById('set-smtp-from').value = s.smtp_from_name || '';
+        }
+    } catch(e) { console.error('Settings load error:',e); }
+}
+
+async function saveProfile() {
+    const full_name = document.getElementById('set-name').value.trim();
+    const company_name = document.getElementById('set-company').value.trim();
+    const phone_number = document.getElementById('set-phone').value.trim();
+    if (!full_name) return toast('Name is required','error');
+    try {
+        const res = await api('/api/settings/profile',{method:'PATCH',body:JSON.stringify({full_name,company_name,phone_number})});
+        if (res&&res.ok) toast('Profile saved!','success');
+        else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+    } catch(e) { toast('Network error','error'); }
+}
+
+async function changePassword() {
+    const current_password = document.getElementById('set-curr-pw').value;
+    const new_password = document.getElementById('set-new-pw').value;
+    const confirm = document.getElementById('set-confirm-pw').value;
+    if (!current_password) return toast('Enter current password','error');
+    if (new_password.length<8) return toast('New password must be at least 8 characters','error');
+    if (new_password!==confirm) return toast('Passwords do not match','error');
+    try {
+        const res = await api('/api/settings/change-password',{method:'POST',body:JSON.stringify({current_password,new_password})});
+        if (res&&res.ok) {
+            toast('Password changed!','success');
+            document.getElementById('set-curr-pw').value='';
+            document.getElementById('set-new-pw').value='';
+            document.getElementById('set-confirm-pw').value='';
+        } else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+    } catch(e) { toast('Network error','error'); }
+}
+
+async function saveSMTP() {
+    const smtp_host = document.getElementById('set-smtp-host').value.trim();
+    const smtp_port = parseInt(document.getElementById('set-smtp-port').value)||587;
+    const smtp_user = document.getElementById('set-smtp-user').value.trim();
+    const smtp_password = document.getElementById('set-smtp-pw').value;
+    const smtp_from_name = document.getElementById('set-smtp-from').value.trim();
+    if (!smtp_host) return toast('SMTP host is required','error');
+    if (!smtp_user) return toast('SMTP username is required','error');
+    try {
+        const res = await api('/api/settings/smtp',{method:'POST',body:JSON.stringify({smtp_host,smtp_port,smtp_user,smtp_password,smtp_from_name})});
+        if (res&&res.ok) { toast('SMTP settings saved!','success'); document.getElementById('set-smtp-pw').value=''; loadSettings(); }
+        else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+    } catch(e) { toast('Network error','error'); }
+}
+
+async function testSMTP() {
+    toast('Sending test email...','info');
+    try {
+        const res = await api('/api/settings/smtp/test',{method:'POST'});
+        if (res&&res.ok) { const d=await res.json(); toast(d.message||'Test email sent!','success'); }
+        else { const d=await res.json(); toast(d.detail||'Test failed','error'); }
+    } catch(e) { toast('Network error','error'); }
+}
+
+async function deleteAccount() {
+    const pw = prompt('⚠️ This will permanently delete your account and ALL data.\n\nType your password to confirm:');
+    if (!pw) return;
+    if (!confirm('Are you ABSOLUTELY sure? This cannot be undone.')) return;
+    try {
+        const res = await api('/api/settings/account',{method:'DELETE',body:JSON.stringify({password:pw})});
+        if (res&&res.ok) { alert('Account deleted.'); document.cookie='access_token=;Max-Age=0;path=/'; window.location.href='/login'; }
+        else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+    } catch(e) { toast('Network error','error'); }
+}
+async function loadSettings() {
+    try {
+        const pRes = await api('/api/settings/profile');
+
 
 // ═══ Init ═══
 loadStats();
