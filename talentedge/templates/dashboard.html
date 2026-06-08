@@ -1326,9 +1326,14 @@ async function loadAnalytics() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
 //  SETTINGS PAGE
-// ═ && pRes.ok) {// ═══════════════════════════════════════════════════════════
-            const p = await pRes.json();
+// ═══════════════════════════════════════════════════════════
+async function loadSettings() {
+    try {
+        var pRes = await api('/api/settings/profile');
+        if (pRes && pRes.ok) {
+            var p = await pRes.json();
             document.getElementById('set-name').value = p.full_name || '';
             document.getElementById('set-email').value = p.email || '';
             document.getElementById('set-company').value = p.company_name || '';
@@ -1336,9 +1341,9 @@ async function loadAnalytics() {
             document.getElementById('set-role').value = (p.role||'recruiter').charAt(0).toUpperCase() + (p.role||'').slice(1);
             document.getElementById('set-since').value = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}) : '';
         }
-        const sRes = await api('/api/settings/smtp');
+        var sRes = await api('/api/settings/smtp');
         if (sRes && sRes.ok) {
-            const s = await sRes.json();
+            var s = await sRes.json();
             document.getElementById('set-smtp-host').value = s.smtp_host || '';
             document.getElementById('set-smtp-port').value = s.smtp_port || 587;
             document.getElementById('set-smtp-user').value = s.smtp_user || '';
@@ -1349,67 +1354,67 @@ async function loadAnalytics() {
 }
 
 async function saveProfile() {
-    const full_name = document.getElementById('set-name').value.trim();
-    const company_name = document.getElementById('set-company').value.trim();
-    const phone_number = document.getElementById('set-phone').value.trim();
+    var full_name = document.getElementById('set-name').value.trim();
+    var company_name = document.getElementById('set-company').value.trim();
+    var phone_number = document.getElementById('set-phone').value.trim();
     if (!full_name) return toast('Name is required','error');
     try {
-        const res = await api('/api/settings/profile',{method:'PATCH',body:JSON.stringify({full_name,company_name,phone_number})});
+        var res = await api('/api/settings/profile',{method:'PATCH',body:JSON.stringify({full_name:full_name,company_name:company_name,phone_number:phone_number})});
         if (res&&res.ok) toast('Profile saved!','success');
-        else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+        else { var d=await res.json(); toast(d.detail||'Failed','error'); }
     } catch(e) { toast('Network error','error'); }
 }
 
 async function changePassword() {
-    const current_password = document.getElementById('set-curr-pw').value;
-    const new_password = document.getElementById('set-new-pw').value;
-    const confirm = document.getElementById('set-confirm-pw').value;
+    var current_password = document.getElementById('set-curr-pw').value;
+    var new_password = document.getElementById('set-new-pw').value;
+    var confirmPw = document.getElementById('set-confirm-pw').value;
     if (!current_password) return toast('Enter current password','error');
     if (new_password.length<8) return toast('New password must be at least 8 characters','error');
-    if (new_password!==confirm) return toast('Passwords do not match','error');
+    if (new_password!==confirmPw) return toast('Passwords do not match','error');
     try {
-        const res = await api('/api/settings/change-password',{method:'POST',body:JSON.stringify({current_password,new_password})});
+        var res = await api('/api/settings/change-password',{method:'POST',body:JSON.stringify({current_password:current_password,new_password:new_password})});
         if (res&&res.ok) {
             toast('Password changed!','success');
             document.getElementById('set-curr-pw').value='';
             document.getElementById('set-new-pw').value='';
             document.getElementById('set-confirm-pw').value='';
-        } else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+        } else { var d=await res.json(); toast(d.detail||'Failed','error'); }
     } catch(e) { toast('Network error','error'); }
 }
 
 async function saveSMTP() {
-    const smtp_host = document.getElementById('set-smtp-host').value.trim();
-    const smtp_port = parseInt(document.getElementById('set-smtp-port').value)||587;
-    const smtp_user = document.getElementById('set-smtp-user').value.trim();
-    const smtp_password = document.getElementById('set-smtp-pw').value;
-    const smtp_from_name = document.getElementById('set-smtp-from').value.trim();
+    var smtp_host = document.getElementById('set-smtp-host').value.trim();
+    var smtp_port = parseInt(document.getElementById('set-smtp-port').value)||587;
+    var smtp_user = document.getElementById('set-smtp-user').value.trim();
+    var smtp_password = document.getElementById('set-smtp-pw').value;
+    var smtp_from_name = document.getElementById('set-smtp-from').value.trim();
     if (!smtp_host) return toast('SMTP host is required','error');
     if (!smtp_user) return toast('SMTP username is required','error');
     try {
-        const res = await api('/api/settings/smtp',{method:'POST',body:JSON.stringify({smtp_host,smtp_port,smtp_user,smtp_password,smtp_from_name})});
+        var res = await api('/api/settings/smtp',{method:'POST',body:JSON.stringify({smtp_host:smtp_host,smtp_port:smtp_port,smtp_user:smtp_user,smtp_password:smtp_password,smtp_from_name:smtp_from_name})});
         if (res&&res.ok) { toast('SMTP settings saved!','success'); document.getElementById('set-smtp-pw').value=''; loadSettings(); }
-        else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+        else { var d=await res.json(); toast(d.detail||'Failed','error'); }
     } catch(e) { toast('Network error','error'); }
 }
 
 async function testSMTP() {
     toast('Sending test email...','info');
     try {
-        const res = await api('/api/settings/smtp/test',{method:'POST'});
-        if (res&&res.ok) { const d=await res.json(); toast(d.message||'Test email sent!','success'); }
-        else { const d=await res.json(); toast(d.detail||'Test failed','error'); }
+        var res = await api('/api/settings/smtp/test',{method:'POST'});
+        if (res&&res.ok) { var d=await res.json(); toast(d.message||'Test email sent!','success'); }
+        else { var d=await res.json(); toast(d.detail||'Test failed','error'); }
     } catch(e) { toast('Network error','error'); }
 }
 
 async function deleteAccount() {
-    const pw = prompt('⚠️ This will permanently delete your account and ALL data.\n\nType your password to confirm:');
+    var pw = prompt('This will permanently delete your account and ALL data.\n\nType your password to confirm:');
     if (!pw) return;
     if (!confirm('Are you ABSOLUTELY sure? This cannot be undone.')) return;
     try {
-        const res = await api('/api/settings/account',{method:'DELETE',body:JSON.stringify({password:pw})});
+        var res = await api('/api/settings/account',{method:'DELETE',body:JSON.stringify({password:pw})});
         if (res&&res.ok) { alert('Account deleted.'); document.cookie='access_token=;Max-Age=0;path=/'; window.location.href='/login'; }
-        else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+        else { var d=await res.json(); toast(d.detail||'Failed','error'); }
     } catch(e) { toast('Network error','error'); }
 }
 async function loadSettings() {
