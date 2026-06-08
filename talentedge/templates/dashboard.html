@@ -110,6 +110,7 @@ tr:hover td{background:#F8FAFC}
         <a onclick="showPage('candidates')" data-page="candidates">👥 Candidates</a>
         <a onclick="showPage('logs')" data-page="logs">📋 Pipeline Logs</a>
         <a onclick="showPage('emails')" data-page="emails">📧 Email Logs</a>
+        <a onclick="showPage('interviews')" data-page="interviews">📅 Interviews</a>
         <a onclick="showPage('assessments')" data-page="assessments">📝 Assessments</a>
     </nav>
     <div class="user-box">
@@ -391,6 +392,107 @@ tr:hover td{background:#F8FAFC}
     </div>
 </div>
 
+<!-- PAGE: INTERVIEWS -->
+<div class="page" id="page-interviews">
+  <div class="banner"><h1>📅 Interview Scheduling</h1><p>Schedule, confirm, and track interviews with panel availability</p></div>
+
+  <div class="stat-row" id="interview-stats"></div>
+
+  <div class="card">
+    <h3>📋 Schedule New Interview</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1rem">
+      <div>
+        <div class="form-group">
+          <label>Select Candidate</label>
+          <select id="interview-candidate-select">
+            <option value="">Loading eligible candidates...</option>
+          </select>
+          <p style="font-size:.75rem;color:#94A3B8;margin:.3rem 0 0">Only candidates who passed assessment are shown</p>
+        </div>
+        <div style="margin-top:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <label style="font-weight:600;color:#334155">👥 Interview Panel</label>
+            <button class="btn btn-sm btn-outline" onclick="addPanelRow()">+ Add Member</button>
+          </div>
+          <div id="panel-rows" style="margin-top:.5rem">
+            <div class="panel-row" style="display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center">
+              <input type="text" placeholder="Name" class="panel-name" style="flex:2;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+              <input type="email" placeholder="Email" class="panel-email" style="flex:2;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+              <select class="panel-role" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+                <option>Interviewer</option><option>Lead</option><option>HR</option><option>Hiring Manager</option>
+              </select>
+              <button onclick="removePanelRow(this)" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:1.2rem">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:1rem">
+          <label>Duration</label>
+          <select id="interview-duration">
+            <option value="30">30 minutes</option>
+            <option value="45" selected>45 minutes</option>
+            <option value="60">60 minutes</option>
+            <option value="90">90 minutes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notes (optional)</label>
+          <textarea id="interview-notes" rows="3" placeholder="Any special instructions..."></textarea>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <label style="font-weight:600;color:#334155">🕐 Available Time Slots</label>
+          <button class="btn btn-sm btn-outline" onclick="addSlotRow()">+ Add Slot</button>
+        </div>
+        <p style="font-size:.75rem;color:#94A3B8;margin:.2rem 0 .5rem">Provide multiple options for the candidate</p>
+        <div id="slot-rows">
+          <div class="slot-row" style="display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center">
+            <input type="date" class="slot-date" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+            <input type="time" class="slot-time" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+            <button onclick="removeSlotRow(this)" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:1.2rem">✕</button>
+          </div>
+          <div class="slot-row" style="display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center">
+            <input type="date" class="slot-date" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+            <input type="time" class="slot-time" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+            <button onclick="removeSlotRow(this)" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:1.2rem">✕</button>
+          </div>
+          <div class="slot-row" style="display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center">
+            <input type="date" class="slot-date" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+            <input type="time" class="slot-time" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+            <button onclick="removeSlotRow(this)" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:1.2rem">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="scheduleInterview()" style="margin-top:1.5rem;width:100%;padding:.8rem;font-size:1rem" id="schedule-btn">
+      📅 Schedule Interview
+    </button>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem">
+    <h3>📋 Scheduled Interviews</h3>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Candidate</th><th>Role</th><th>Panel</th><th>Slots</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="interviews-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:white;border-radius:16px;padding:2rem;max-width:500px;width:90%">
+      <h3 style="margin:0 0 1rem">✅ Confirm Interview Slot</h3>
+      <div class="form-group"><label>Select Confirmed Slot</label><select id="confirm-slot-select"></select></div>
+      <div class="form-group"><label>Meeting Link (optional)</label><input type="url" id="confirm-meeting-link" placeholder="https://meet.google.com/..."></div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem">
+        <button class="btn btn-primary" onclick="submitConfirm()" style="flex:1">✅ Confirm</button>
+        <button class="btn btn-outline" onclick="closeConfirmModal()" style="flex:1">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <script>
@@ -408,6 +510,7 @@ function showPage(name) {
     if (name === 'logs') loadLogs();
     if (name === 'emails') loadEmails();
     if (name === 'assessments') loadAssessmentsList();
+    if (name === 'interviews') loadInterviews();
 }
 
 // ═══ Toast ═══
@@ -882,6 +985,149 @@ function showBatchResults(data) {
                 '</tr>';
         }
     }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INTERVIEW SCHEDULING
+// ═══════════════════════════════════════════════════════════
+let interviewConfirmCandId = null;
+
+async function loadInterviews() {
+    const [intRes, eligRes] = await Promise.all([
+        api('/api/interviews/'), api('/api/interviews/eligible'),
+    ]);
+    if (!intRes || !eligRes) return;
+    const intData = await intRes.json(); const eligData = await eligRes.json();
+    const interviews = intData.interviews || [];
+
+    // Stats
+    const scheduled = interviews.filter(i => i.status === 'Interview Scheduled').length;
+    const confirmed = interviews.filter(i => i.status === 'Interview Confirmed').length;
+    const hired = interviews.filter(i => i.status === 'Hired').length;
+    const rejected = interviews.filter(i => i.status === 'Rejected').length;
+    document.getElementById('interview-stats').innerHTML = [
+        {label:'Total',value:interviews.length,cls:'blue'},{label:'Pending',value:scheduled,cls:'orange'},
+        {label:'Confirmed',value:confirmed,cls:'green'},{label:'Hired',value:hired,cls:'green'},
+    ].map(s=>`<div class="stat-card ${s.cls}"><div class="val">${s.value}</div><div class="lbl">${s.label}</div></div>`).join('');
+
+    // Candidate dropdown
+    const sel = document.getElementById('interview-candidate-select');
+    const eligible = eligData.candidates || [];
+    sel.innerHTML = eligible.length === 0
+        ? '<option value="">No eligible candidates (need Passed Assessment)</option>'
+        : '<option value="">Select a candidate...</option>' +
+          eligible.map(c => `<option value="${c.candidate_id}">${c.name} — ${c.role_applied} (Assessment: ${c.assessment_score||'N/A'}%)</option>`).join('');
+
+    // Table
+    const tbody = document.getElementById('interviews-body');
+    if (interviews.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">No interviews scheduled yet. Select an eligible candidate above.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = interviews.map(iv => {
+        const panelHtml = (iv.panel||[]).map(p=>`<div style="font-size:.8rem"><strong>${p.name}</strong> <span style="color:#94A3B8">(${p.role})</span></div>`).join('');
+        const slotsHtml = (iv.slots||[]).map(s=>{
+            const isC = iv.confirmed_slot === s;
+            return `<div style="font-size:.8rem;${isC?'color:#059669;font-weight:700':''}">${isC?'✅ ':'🕐 '}${s}</div>`;
+        }).join('');
+        const sMap = {'Interview Scheduled':'badge-review','Interview Confirmed':'badge-pass','Hired':'badge-pass','Rejected':'badge-fail'};
+        let actions = '';
+        if (iv.status === 'Interview Scheduled') {
+            actions = `<button class="btn btn-sm btn-primary" onclick="confirmInterview('${iv.candidate_id}',${JSON.stringify(iv.slots).replace(/"/g,'&quot;')})">✅ Confirm</button>
+                       <button class="btn btn-sm btn-danger" onclick="cancelInterview('${iv.candidate_id}')" style="margin-top:.3rem">✕ Cancel</button>`;
+        } else if (iv.status === 'Interview Confirmed') {
+            actions = `<button class="btn btn-sm btn-success" onclick="markResult('${iv.candidate_id}','Hired')">🎉 Hire</button>
+                       <button class="btn btn-sm btn-danger" onclick="markResult('${iv.candidate_id}','Rejected')" style="margin-top:.3rem">✕ Reject</button>`;
+        } else {
+            actions = `<span class="badge ${sMap[iv.status]||'badge-pending'}">${iv.status}</span>`;
+        }
+        const meetLink = iv.meeting_link ? `<div style="font-size:.75rem;margin-top:.2rem">${iv.meeting_link}📹 Meeting Link</a></div>` : '';
+        return `<tr>
+            <td><strong>${iv.name}</strong><br><span style="color:#94A3B8;font-size:.75rem">${iv.candidate_id}</span>${meetLink}</td>
+            <td>${iv.role_applied}</td><td>${panelHtml||'—'}</td><td>${slotsHtml||'—'}</td>
+            <td><span class="badge ${sMap[iv.status]||'badge-pending'}">${iv.status}</span></td><td>${actions}</td>
+        </tr>`;
+    }).join('');
+}
+
+function addPanelRow() {
+    const c = document.getElementById('panel-rows');
+    const r = document.createElement('div'); r.className='panel-row'; r.style.cssText='display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center';
+    r.innerHTML = `<input type="text" placeholder="Name" class="panel-name" style="flex:2;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+        <input type="email" placeholder="Email" class="panel-email" style="flex:2;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+        <select class="panel-role" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem"><option>Interviewer</option><option>Lead</option><option>HR</option><option>Hiring Manager</option></select>
+        <button onclick="removePanelRow(this)" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:1.2rem">✕</button>`;
+    c.appendChild(r);
+}
+function removePanelRow(btn) { if(document.querySelectorAll('#panel-rows .panel-row').length>1) btn.closest('.panel-row').remove(); else toast('At least one panel member required','error'); }
+
+function addSlotRow() {
+    const c = document.getElementById('slot-rows');
+    const r = document.createElement('div'); r.className='slot-row'; r.style.cssText='display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center';
+    r.innerHTML = `<input type="date" class="slot-date" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+        <input type="time" class="slot-time" style="flex:1;padding:.5rem;border:1px solid #E2E8F0;border-radius:6px;font-size:.85rem">
+        <button onclick="removeSlotRow(this)" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:1.2rem">✕</button>`;
+    c.appendChild(r);
+}
+function removeSlotRow(btn) { if(document.querySelectorAll('#slot-rows .slot-row').length>1) btn.closest('.slot-row').remove(); else toast('At least one time slot required','error'); }
+
+async function scheduleInterview() {
+    const candidateId = document.getElementById('interview-candidate-select').value;
+    if (!candidateId) return toast('Please select a candidate','error');
+    const panel = [];
+    document.querySelectorAll('#panel-rows .panel-row').forEach(row => {
+        const n=row.querySelector('.panel-name').value.trim(), e=row.querySelector('.panel-email').value.trim(), r=row.querySelector('.panel-role').value;
+        if(n&&e) panel.push({name:n,email:e,role:r});
+    });
+    if (panel.length===0) return toast('Add at least one panel member','error');
+    const slots = [];
+    document.querySelectorAll('#slot-rows .slot-row').forEach(row => {
+        const d=row.querySelector('.slot-date').value, t=row.querySelector('.slot-time').value;
+        if(d&&t) slots.push(new Date(d+'T'+t).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}));
+    });
+    if (slots.length===0) return toast('Add at least one time slot','error');
+    const duration = parseInt(document.getElementById('interview-duration').value);
+    const notes = document.getElementById('interview-notes').value.trim();
+    const btn = document.getElementById('schedule-btn');
+    btn.disabled=true; btn.textContent='⏳ Scheduling...';
+    try {
+        const res = await api('/api/interviews/schedule',{method:'POST',body:JSON.stringify({candidate_id:candidateId,slots,panel,duration_minutes:duration,notes})});
+        if(res&&res.ok) { const d=await res.json(); toast(d.message||'Scheduled!','success'); loadInterviews(); document.getElementById('interview-notes').value=''; }
+        else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+    } catch(e) { toast('Network error','error'); }
+    btn.disabled=false; btn.textContent='📅 Schedule Interview';
+}
+
+function confirmInterview(candidateId, slots) {
+    interviewConfirmCandId = candidateId;
+    document.getElementById('confirm-slot-select').innerHTML = slots.map(s=>`<option value="${s}">${s}</option>`).join('');
+    document.getElementById('confirm-meeting-link').value = '';
+    document.getElementById('confirm-modal').style.display = 'flex';
+}
+function closeConfirmModal() { document.getElementById('confirm-modal').style.display='none'; interviewConfirmCandId=null; }
+
+async function submitConfirm() {
+    if(!interviewConfirmCandId) return;
+    const slot=document.getElementById('confirm-slot-select').value, link=document.getElementById('confirm-meeting-link').value.trim();
+    try {
+        const res = await api(`/api/interviews/${interviewConfirmCandId}/confirm`,{method:'PATCH',body:JSON.stringify({confirmed_slot:slot,meeting_link:link})});
+        if(res&&res.ok) { toast('Interview confirmed!','success'); closeConfirmModal(); loadInterviews(); }
+        else { const d=await res.json(); toast(d.detail||'Failed','error'); }
+    } catch(e) { toast('Failed to confirm','error'); }
+}
+
+async function cancelInterview(candidateId) {
+    if(!confirm('Cancel this interview?')) return;
+    const res = await api(`/api/interviews/${candidateId}/cancel`,{method:'DELETE'});
+    if(res&&res.ok) { toast('Interview cancelled','success'); loadInterviews(); }
+    else toast('Failed to cancel','error');
+}
+
+async function markResult(candidateId, decision) {
+    if(!confirm(`Mark as "${decision}"?`)) return;
+    const res = await api(`/api/interviews/${candidateId}/result?decision=${decision}`,{method:'PATCH'});
+    if(res&&res.ok) { toast(`Candidate ${decision}!`,'success'); loadInterviews(); loadStats(); }
+    else toast('Failed','error');
 }
 
 // ═══ Init ═══
