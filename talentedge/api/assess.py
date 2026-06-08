@@ -9,6 +9,34 @@ from services.email_service import send_rejection_email, send_interview_invitati
 router = APIRouter(prefix="/api/assess", tags=["Candidate Assessment"])
 
 
+def _get_custom_questions(db: Session, candidate_id: str, role: str):
+    """
+    Lookup priority:
+      1. Candidate-specific custom assessment (candidate_id match)
+      2. Role-level custom assessment (role match, no candidate_id)
+      3. None → fall back to built-in questions
+    """
+    # 1. Candidate-specific
+    custom = db.query(CustomAssessment).filter(
+        CustomAssessment.candidate_id == candidate_id
+    ).order_by(CustomAssessment.id.desc()).first()
+
+    if custom and custom.questions_json:
+        return json.loads(custom.questions_json), custom.duration_minutes
+
+    # 2. Role-level (candidate_id is NULL or empty)
+    role_custom = db.query(CustomAssessment).filter(
+        CustomAssessment.role == role,
+        (CustomAssessment.candidate_id == None) | (CustomAssessment.candidate_id == "")
+    ).order_by(CustomAssessment.id.desc()).first()
+
+    if role_custom and role_custom.questions_json:
+        return json.loads(role_custom.questions_json), role_custom.duration_minutes
+
+    # 3. No custom → return None
+    return None, None
+
+
 @router.get("/verify")
 def verify_credentials(token: str, username: str, password: str, db: Session = Depends(get_db)):
     """Verify candidate assessment credentials and return questions."""
@@ -19,32 +47,28 @@ def verify_credentials(token: str, username: str, password: str, db: Session = D
     cand = db.query(Candidate).filter(Candidate.candidate_id == cred.candidate_id).first()
     if not cand:
         raise HTTPException(status_code=404, detail="Candidate not found")
-
     if cand.assessment_result_json:
         raise HTTPException(status_code=400, detail="Assessment already submitted")
 
-    # Load questions (custom or built-in)
-    custom = db.query(CustomAssessment).filter(
-        CustomAssessment.candidate_id == cred.candidate_id
-    ).order_by(CustomAssessment.id.desc()).first()
+    # Load questions: candidate-specific → role-level → built-in
+    custom_qs, custom_dur = _get_custom_questions(db, cred.candidate_id, cand.role_applied)
 
-    if custom and custom.questions_json:
+    if custom_qs:
         import random
-        questions = json.loads(custom.questions_json)
+        questions = custom_qs
         random.shuffle(questions)
+        duration = custom_dur or cand.assessment_duration_mins or 20
     else:
         questions = get_questions(cand.role_applied, 30)
+        duration = cand.assessment_duration_mins or 20
 
     # Strip answers for candidate
     safe_qs = [{"q": q["q"], "options": q["options"], "topic": q.get("topic", "")} for q in questions]
 
-    # Store full questions in session for scoring later
-    cand.ats_result_json = cand.ats_result_json  # keep existing
-
     return {
         "valid": True, "candidate_id": cred.candidate_id,
         "candidate_name": cand.name, "role": cand.role_applied,
-        "questions": safe_qs, "duration_minutes": cand.assessment_duration_mins or 20,
+        "questions": safe_qs, "duration_minutes": duration,
     }
 
 
@@ -62,17 +86,14 @@ def submit_assessment(data: dict, db: Session = Depends(get_db)):
     cand = db.query(Candidate).filter(Candidate.candidate_id == candidate_id).first()
     if not cand:
         raise HTTPException(status_code=404, detail="Candidate not found")
-
     if cand.assessment_result_json:
         raise HTTPException(status_code=400, detail="Already submitted")
 
-    # Get full questions (with answers) for scoring
-    custom = db.query(CustomAssessment).filter(
-        CustomAssessment.candidate_id == candidate_id
-    ).order_by(CustomAssessment.id.desc()).first()
+    # Get full questions (with answers) for scoring — same priority lookup
+    custom_qs, _ = _get_custom_questions(db, candidate_id, cand.role_applied)
 
-    if custom and custom.questions_json:
-        questions = json.loads(custom.questions_json)
+    if custom_qs:
+        questions = custom_qs
     else:
         questions = get_questions(cand.role_applied, 30)
 
@@ -98,10 +119,8 @@ def submit_assessment(data: dict, db: Session = Depends(get_db)):
 
     # Auto-email based on result
     if result["decision"] == "PASS":
-        cand.status = "Interview Scheduled"
-        cand.interview_scheduled = True
-        slots = ["Monday 10:00 AM UTC", "Tuesday 2:30 PM UTC", "Wednesday 11:00 AM UTC"]
-        send_interview_invitation(db, cand, slots)
+        cand.status = "Passed Assessment"
+        # Don't auto-schedule interview — let recruiter do it from Interviews page
     else:
         send_rejection_email(db, cand, stage="Assessment")
 
@@ -113,5 +132,4 @@ def submit_assessment(data: dict, db: Session = Depends(get_db)):
         send_recruiter_notification(db, owner.email, cand, event)
 
     db.commit()
-
     return result
