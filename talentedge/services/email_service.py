@@ -118,7 +118,16 @@ def send_assessment_invitation(db: Session, candidate: Candidate):
         return None
 
     token = secrets.token_hex(8)
-    username = candidate.name.lower().replace(" ", ".") + f".{random.randint(100,999)}"
+    # username = candidate.name.lower().replace(" ", ".") + f".{random.randint(100,999)}"
+    import re
+    clean_name = re.sub(r'[^a-zA-Z\s]', '', candidate.name).strip()
+    parts = clean_name.lower().split()
+    if len(parts) >= 2:
+        username = parts[0] + '.' + parts[-1] + '.' + str(random.randint(100,999))
+    elif len(parts) == 1:
+        username = parts[0] + '.' + str(random.randint(100,999))
+    else:
+        username = 'candidate.' + str(random.randint(100,999))
     password = _generate_password()
 
     # Store credentials
