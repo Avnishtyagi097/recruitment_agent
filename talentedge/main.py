@@ -15,6 +15,7 @@ from api.logs import router as logs_router
 from api.emails import router as emails_router
 from api.interviews import router as interviews_router
 from api.analytics import router as analytics_router
+from api.settings import router as settings_router
 
 
 @asynccontextmanager
@@ -40,6 +41,7 @@ app.include_router(emails_router)
 app.include_router(custom_assessments_router)
 app.include_router(interviews_router)
 app.include_router(analytics_router)
+app.include_router(settings_router)
 
 
 @app.get("/", response_class=HTMLResponse)
