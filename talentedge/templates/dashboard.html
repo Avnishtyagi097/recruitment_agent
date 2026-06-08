@@ -106,6 +106,7 @@ tr:hover td{background:#F8FAFC}
         <a onclick="showPage('candidates')" data-page="candidates">👥 Candidates</a>
         <a onclick="showPage('logs')" data-page="logs">📋 Pipeline Logs</a>
         <a onclick="showPage('emails')" data-page="emails">📧 Email Logs</a>
+        <a onclick="showPage('assessments')" data-page="assessments">📝 Assessments</a>
     </nav>
     <div class="user-box">
         <div class="name" id="user-name">{{ user.name }}</div>
@@ -223,6 +224,82 @@ tr:hover td{background:#F8FAFC}
     </div>
 </div>
 
+<!-- PAGE: ASSESSMENTS -->
+<div class="page" id="page-assessments">
+    <div class="banner"><h1>📝 Custom Assessments</h1><p>Upload your own questions or use built-in role-specific assessments</p></div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+        <div class="card">
+            <h3>📤 Upload JSON</h3>
+            <p style="color:#64748B;font-size:.85rem;margin-bottom:1rem">Upload a JSON file with questions in the required format.</p>
+            <pre style="background:#F8FAFC;padding:.8rem;border-radius:8px;font-size:.75rem;overflow-x:auto;border:1px solid #E2E8F0;margin-bottom:1rem">[{"q":"Question?","options":["A","B","C","D"],"answer":0,"topic":"SQL","difficulty":"easy"}]</pre>
+            <form id="json-upload-form" onsubmit="event.preventDefault(); uploadAssessment('json')">
+                <div class="form-group"><label>JSON File</label><input type="file" id="json-file" accept=".json" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Role</label>
+                        <select id="json-role"><option>Data Engineer</option><option>Software Engineer</option><option>Data Analyst</option><option>DevOps Engineer</option><option>General</option></select>
+                    </div>
+                    <div class="form-group"><label>Duration (min)</label><input type="number" id="json-duration" value="20" min="5" max="120"></div>
+                </div>
+                <div class="form-group"><label>Candidate ID <span style="color:#94A3B8">(optional)</span></label><input type="text" id="json-candid" placeholder="CAND-xxx or leave empty"></div>
+                <button type="submit" class="btn btn-primary">📤 Upload JSON</button>
+            </form>
+        </div>
+        <div class="card">
+            <h3>📊 Upload CSV</h3>
+            <p style="color:#64748B;font-size:.85rem;margin-bottom:1rem">CSV columns: question, option_a, option_b, option_c, option_d, correct_answer (A/B/C/D), topic, difficulty</p>
+            <form id="csv-upload-form" onsubmit="event.preventDefault(); uploadAssessment('csv')">
+                <div class="form-group"><label>CSV File</label><input type="file" id="csv-file" accept=".csv" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Role</label>
+                        <select id="csv-role"><option>Data Engineer</option><option>Software Engineer</option><option>Data Analyst</option><option>DevOps Engineer</option><option>General</option></select>
+                    </div>
+                    <div class="form-group"><label>Duration (min)</label><input type="number" id="csv-duration" value="20" min="5" max="120"></div>
+                </div>
+                <div class="form-group"><label>Candidate ID <span style="color:#94A3B8">(optional)</span></label><input type="text" id="csv-candid" placeholder="CAND-xxx or leave empty"></div>
+                <button type="submit" class="btn btn-primary">📊 Upload CSV</button>
+            </form>
+        </div>
+    </div>
+    <div class="card" style="margin-top:1.5rem">
+        <h3>✍️ Add Question Manually</h3>
+        <form id="manual-q-form" onsubmit="event.preventDefault(); addManualQuestion()">
+            <div class="form-group"><label>Question *</label><input type="text" id="mq-question" required placeholder="What does ETL stand for?"></div>
+            <div class="form-row">
+                <div class="form-group"><label>Option A *</label><input type="text" id="mq-a" required placeholder="Extract, Transform, Load"></div>
+                <div class="form-group"><label>Option B *</label><input type="text" id="mq-b" required placeholder="Execute, Transfer, Log"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Option C *</label><input type="text" id="mq-c" required placeholder="Extract, Transfer, Load"></div>
+                <div class="form-group"><label>Option D *</label><input type="text" id="mq-d" required placeholder="Execute, Transform, Load"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Correct Answer</label>
+                    <select id="mq-answer"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+                </div>
+                <div class="form-group"><label>Topic</label><input type="text" id="mq-topic" value="General"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Add to Assessment ID <span style="color:#94A3B8">(optional)</span></label><input type="number" id="mq-assess-id" placeholder="Leave empty to create new"></div>
+                <div class="form-group"><label>Role</label>
+                    <select id="mq-role"><option>Data Engineer</option><option>Software Engineer</option><option>Data Analyst</option><option>DevOps Engineer</option><option>General</option></select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">➕ Add Question</button>
+        </form>
+    </div>
+    <div class="card" style="margin-top:1.5rem">
+        <h3>📋 Your Custom Assessments</h3>
+        <div style="overflow-x:auto">
+            <table>
+                <thead><tr><th>ID</th><th>Role</th><th>Candidate</th><th>Questions</th><th>Duration</th><th>Created</th><th>Actions</th></tr></thead>
+                <tbody id="assess-list-tbody"></tbody>
+            </table>
+        </div>
+        <div id="no-assessments" style="text-align:center;padding:2rem;color:#94A3B8;display:none">No custom assessments yet.</div>
+    </div>
+</div>
+
 </div><!-- /main -->
 
 <script>
@@ -236,6 +313,7 @@ function showPage(name) {
     if (name === 'candidates') loadCandidates();
     if (name === 'logs') loadLogs();
     if (name === 'emails') loadEmails();
+    if (name === 'assessments') loadAssessmentsList();
 }
 
 // ═══ Toast ═══
@@ -456,6 +534,94 @@ document.getElementById('role-select').addEventListener('change', function() {
 });
 // Auto-load first JD
 document.getElementById('jd-text').value = JD["Data Engineer"].replace(/\\n/g, '\n');
+
+// ═══ Custom Assessments ═══
+async function uploadAssessment(type) {
+    const fileInput = document.getElementById(type + '-file');
+    const role = document.getElementById(type + '-role').value;
+    const duration = document.getElementById(type + '-duration').value;
+    const candId = document.getElementById(type + '-candid').value;
+    if (!fileInput.files[0]) { toast('Select a file', 'error'); return; }
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('role', role);
+    formData.append('duration_minutes', duration);
+    if (candId) formData.append('candidate_id', candId);
+    setLoading(true);
+    try {
+        const res = await fetch(`/api/custom-assessments/upload-${type}`, {method:'POST',body:formData,credentials:'include'});
+        const data = await res.json();
+        if (res.ok) { toast(data.message,'success'); loadAssessmentsList(); fileInput.value=''; }
+        else toast(data.detail||'Upload failed','error');
+    } catch(e) { toast('Network error','error'); }
+    setLoading(false);
+}
+
+async function addManualQuestion() {
+    const formData = new FormData();
+    formData.append('question', document.getElementById('mq-question').value);
+    formData.append('option_a', document.getElementById('mq-a').value);
+    formData.append('option_b', document.getElementById('mq-b').value);
+    formData.append('option_c', document.getElementById('mq-c').value);
+    formData.append('option_d', document.getElementById('mq-d').value);
+    formData.append('correct_answer', document.getElementById('mq-answer').value);
+    formData.append('topic', document.getElementById('mq-topic').value);
+    formData.append('role', document.getElementById('mq-role').value);
+    const assessId = document.getElementById('mq-assess-id').value;
+    if (assessId) formData.append('assessment_id', assessId);
+    setLoading(true);
+    try {
+        const res = await fetch('/api/custom-assessments/add-question', {method:'POST',body:formData,credentials:'include'});
+        const data = await res.json();
+        if (res.ok) { toast(data.message,'success'); loadAssessmentsList(); document.getElementById('manual-q-form').reset(); if(data.assessment_id) document.getElementById('mq-assess-id').value=data.assessment_id; }
+        else toast(data.detail||'Failed','error');
+    } catch(e) { toast('Network error','error'); }
+    setLoading(false);
+}
+
+async function loadAssessmentsList() {
+    const res = await api('/api/custom-assessments/');
+    if (!res) return;
+    const data = await res.json();
+    const items = data.assessments || [];
+    const tbody = document.getElementById('assess-list-tbody');
+    const noDiv = document.getElementById('no-assessments');
+    if (items.length===0) { noDiv.style.display='block'; tbody.innerHTML=''; return; }
+    noDiv.style.display='none';
+    tbody.innerHTML = items.map(a => `<tr>
+        <td><strong>#${a.id}</strong></td><td>${a.role}</td>
+        <td>${a.candidate_id||'<span style="color:#94A3B8">Role-level</span>'}</td>
+        <td><span class="badge badge-pending">${a.questions_count} Qs</span></td>
+        <td>${a.duration_minutes} min</td>
+        <td>${a.created_at?new Date(a.created_at).toLocaleDateString():'—'}</td>
+        <td><button class="btn btn-sm btn-outline" onclick="viewAssessment(${a.id})">👁</button> <button class="btn btn-sm btn-danger" onclick="deleteAssessment(${a.id})">🗑</button></td>
+    </tr>`).join('');
+}
+
+async function viewAssessment(id) {
+    const res = await api('/api/custom-assessments/'+id);
+    if (!res) return;
+    const data = await res.json();
+    let html = '<h3>Questions Preview</h3>';
+    data.questions.forEach((q,i) => {
+        const ol = ['A','B','C','D'];
+        html += `<div style="background:#F8FAFC;padding:.8rem;border-radius:8px;margin:.5rem 0;border-left:3px solid #4F46E5">
+            <strong>Q${i+1}.</strong> (${q.topic}) ${q.q}<br>
+            ${q.options.map((o,j)=>`<span style="margin-left:1rem;${j===q.answer?'color:#10B981;font-weight:700':'color:#64748B'}">${ol[j]}. ${o}</span><br>`).join('')}</div>`;
+    });
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;justify-content:center;align-items:center';
+    overlay.innerHTML = `<div style="background:white;border-radius:16px;padding:2rem;max-width:700px;max-height:80vh;overflow-y:auto;width:90%">${html}<div style="text-align:center;margin-top:1rem"><button class="btn btn-outline" onclick="this.closest('div[style]').parentElement.remove()">Close</button></div></div>`;
+    document.body.appendChild(overlay);
+}
+
+async function deleteAssessment(id) {
+    if (!confirm('Delete this assessment?')) return;
+    const res = await api('/api/custom-assessments/'+id, {method:'DELETE'});
+    if (res&&res.ok) { toast('Deleted','success'); loadAssessmentsList(); }
+    else toast('Failed to delete','error');
+}
+
 
 // ═══ Init ═══
 loadStats();
