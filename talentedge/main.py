@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from api.custom_assessments import router as custom_assessments_router
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -34,6 +35,7 @@ app.include_router(assessments_router)
 app.include_router(assess_router)
 app.include_router(logs_router)
 app.include_router(emails_router)
+app.include_router(custom_assessments_router)
 
 
 @app.get("/", response_class=HTMLResponse)
