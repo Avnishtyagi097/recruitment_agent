@@ -1,244 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Assessment - TalentEdge</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TalentEdge AI — Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:#F1F5F9;min-height:100vh}
-.container{max-width:800px;margin:0 auto;padding:2rem}
-.header{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;padding:1.5rem 2rem;border-radius:16px;margin-bottom:2rem;text-align:center}
-.header h1{font-family:'Poppins';font-size:1.5rem}
-.header p{opacity:.85;margin-top:.3rem}
-.card{background:white;border-radius:14px;padding:2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #E2E8F0;margin-bottom:1.5rem}
+body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(135deg,#0F172A 0%,#1E293B 30%,#312E81 60%,#4F46E5 100%);display:flex;align-items:center;justify-content:center;color:#1E293B}
+
+/* Login Screen */
+.login-wrapper{width:100%;max-width:460px;padding:2rem}
+.brand{text-align:center;margin-bottom:2rem}
+.brand .logo{font-size:2rem;font-weight:900;color:white;letter-spacing:-1px}
+.brand .logo span{background:linear-gradient(135deg,#A78BFA,#EC4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.brand p{color:#94A3B8;font-size:.9rem;margin-top:.3rem}
+.login-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-radius:20px;padding:2.5rem;box-shadow:0 25px 50px rgba(0,0,0,.25)}
+.login-card h2{font-size:1.4rem;font-weight:700;color:#1E293B;margin-bottom:.3rem}
+.login-card .sub{color:#64748B;font-size:.85rem;margin-bottom:1.5rem}
 .form-group{margin-bottom:1.2rem}
-.form-group label{display:block;font-weight:600;color:#334155;margin-bottom:.4rem}
-.form-group input{width:100%;padding:.7rem 1rem;border:2px solid #E2E8F0;border-radius:10px;font-size:.95rem}
-.form-group input:focus{outline:none;border-color:#6366F1}
-.btn{width:100%;padding:.85rem;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer}
-.btn:hover{opacity:.9}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.timer{position:fixed;top:10px;right:10px;background:#0F172A;color:#F1F5F9;padding:10px 20px;border-radius:12px;font-family:'Courier New',monospace;font-size:1.2rem;font-weight:800;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);border:2px solid #334155}
-.timer.warning{background:#78350F;border-color:#F59E0B}
-.timer.critical{background:#7F1D1D;border-color:#EF4444;animation:pulse .5s ease infinite}
-.violation-bar{background:#FEE2E2;color:#991B1B;padding:.6rem 1rem;border-radius:8px;font-weight:600;font-size:.85rem;margin-bottom:1rem;display:none}
-.question{background:white;border-radius:12px;padding:1.5rem;margin-bottom:1rem;border:1px solid #E2E8F0;border-left:4px solid #4F46E5}
-.question .q-num{color:#4F46E5;font-weight:700;font-size:.85rem}
-.question .q-text{margin:.5rem 0;font-weight:600}
-.question label{display:block;padding:.5rem .8rem;margin:.3rem 0;border-radius:8px;cursor:pointer;transition:background .2s}
-.question label:hover{background:#EEF2FF}
-.question input[type=radio]{margin-right:.5rem;accent-color:#4F46E5}
-.progress-bar{height:6px;background:#E2E8F0;border-radius:3px;margin-bottom:1.5rem;overflow:hidden}
-.progress-bar div{height:100%;background:linear-gradient(90deg,#4F46E5,#7C3AED);border-radius:3px;transition:width .3s}
-.result-card{text-align:center;padding:2rem}
-.result-card .score{font-family:'Poppins';font-size:4rem;font-weight:800}
-.result-card .score.pass{color:#10B981} .result-card .score.fail{color:#EF4444}
-.toast{position:fixed;top:60px;right:10px;background:#EF4444;color:white;padding:.8rem 1.2rem;border-radius:10px;font-weight:600;font-size:.85rem;z-index:9999;animation:slideIn .4s ease}
+.form-group label{display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:.4rem}
+.form-group input{width:100%;padding:.75rem 1rem;border:2px solid #E2E8F0;border-radius:12px;font-size:.95rem;font-family:inherit;transition:border-color .2s}
+.form-group input:focus{outline:none;border-color:#4F46E5;box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.btn-login{width:100%;padding:.85rem;border:none;border-radius:12px;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;font-size:1rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(79,70,229,.3)}
+.btn-login:disabled{opacity:.6;transform:none;cursor:not-allowed}
+.error-msg{background:#FEF2F2;color:#DC2626;padding:.6rem 1rem;border-radius:10px;font-size:.85rem;margin-top:1rem;display:none}
+.footer-note{text-align:center;margin-top:1.5rem;color:#64748B;font-size:.8rem}
+
+/* Assessment Screen */
+.assess-wrapper{width:100%;max-width:800px;padding:1.5rem}
+.assess-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+.assess-header .info{color:white}
+.assess-header .info h2{font-size:1.3rem;font-weight:700}
+.assess-header .info p{color:#C7D2FE;font-size:.85rem;margin-top:.2rem}
+.timer-badge{background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);color:white;padding:.6rem 1.2rem;border-radius:12px;font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:.5rem}
+.timer-badge.warning{background:rgba(245,158,11,.2);border-color:#F59E0B;color:#FCD34D}
+.timer-badge.danger{background:rgba(239,68,68,.2);border-color:#EF4444;color:#FCA5A5;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-@keyframes slideIn{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+
+.progress-bar{background:rgba(255,255,255,.1);border-radius:8px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#10B981,#34D399);border-radius:8px;transition:width .5s ease}
+
+.violation-bar{background:rgba(239,68,68,.15);backdrop-filter:blur(10px);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;padding:.5rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:.85rem;font-weight:500;display:none}
+
+.question-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-radius:16px;padding:2rem;box-shadow:0 10px 30px rgba(0,0,0,.15);margin-bottom:1rem}
+.q-header{display:flex;align-items:center;gap:.8rem;margin-bottom:1.2rem}
+.q-number{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0}
+.q-text{font-size:1rem;font-weight:600;color:#1E293B;line-height:1.5}
+.q-topic{display:inline-block;background:#EEF2FF;color:#4F46E5;padding:.15rem .6rem;border-radius:6px;font-size:.7rem;font-weight:600;margin-top:.3rem}
+
+.options{display:flex;flex-direction:column;gap:.6rem}
+.option{display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;border:2px solid #E2E8F0;border-radius:12px;cursor:pointer;transition:all .2s;font-size:.9rem}
+.option:hover{border-color:#C7D2FE;background:#F8FAFF}
+.option.selected{border-color:#4F46E5;background:#EEF2FF;font-weight:600}
+.option .radio{width:20px;height:20px;border-radius:50%;border:2px solid #CBD5E1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.option.selected .radio{border-color:#4F46E5;background:#4F46E5}
+.option.selected .radio::after{content:'';width:8px;height:8px;border-radius:50%;background:white}
+
+.nav-row{display:flex;gap:1rem;margin-top:1.5rem}
+.btn-nav{flex:1;padding:.75rem;border:none;border-radius:12px;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-prev{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.2)}
+.btn-prev:hover{background:rgba(255,255,255,.25)}
+.btn-next{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white}
+.btn-next:hover{transform:translateY(-1px);box-shadow:0 5px 15px rgba(79,70,229,.3)}
+.btn-submit{background:linear-gradient(135deg,#059669,#10B981);color:white}
+.btn-submit:hover{box-shadow:0 5px 15px rgba(16,185,129,.3)}
+
+/* Results Screen */
+.result-wrapper{width:100%;max-width:500px;padding:2rem}
+.result-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-radius:20px;padding:3rem 2rem;text-align:center;box-shadow:0 25px 50px rgba(0,0,0,.2)}
+.result-icon{font-size:4rem;margin-bottom:1rem}
+.result-score{font-size:3.5rem;font-weight:900;margin:.5rem 0}
+.result-score.pass{color:#059669}
+.result-score.fail{color:#DC2626}
+.result-label{font-size:1.2rem;font-weight:700;margin-bottom:.5rem}
+.result-detail{color:#64748B;font-size:.9rem;line-height:1.6}
+.result-badge{display:inline-block;padding:.5rem 1.5rem;border-radius:50px;font-weight:700;font-size:.9rem;margin-top:1rem}
+.result-badge.pass{background:#D1FAE5;color:#065F46}
+.result-badge.fail{background:#FEE2E2;color:#991B1B}
 </style>
 </head>
 <body>
 
-<div class="container">
-<!-- Login Screen -->
-<div id="login-screen">
-    <div class="header">
-        <h1>\U0001f4dd Candidate Assessment</h1>
-        <p>Enter the credentials from your invitation email</p>
+<!-- LOGIN SCREEN -->
+<div id="screen-login" class="login-wrapper">
+  <div class="brand">
+    <div class="logo">🚀 <span>TalentEdge</span> AI</div>
+    <p>Candidate Assessment Portal</p>
+  </div>
+  <div class="login-card">
+    <h2>📝 Start Your Assessment</h2>
+    <p class="sub">Enter the credentials from your invitation email</p>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="e.g. john.doe.123" autocomplete="off">
     </div>
-    <div class="card">
-        <div class="form-group"><label>Username</label><input type="text" id="login-user" placeholder="From your email"></div>
-        <div class="form-group"><label>Password</label><input type="password" id="login-pass" placeholder="From your email"></div>
-        <button class="btn" onclick="doLogin()" id="login-btn">\U0001f680 Start Assessment</button>
-        <p style="text-align:center;margin-top:1rem;color:#94A3B8;font-size:.85rem">Token: {{ token }}</p>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter your password">
     </div>
+    <button class="btn-login" id="login-btn" onclick="startAssessment()">🚀 Start Assessment</button>
+    <div class="error-msg" id="login-error"></div>
+  </div>
+  <p class="footer-note">🔒 Your session is monitored. Do not switch tabs.</p>
 </div>
 
-<!-- Assessment Screen -->
-<div id="assess-screen" style="display:none">
-    <div class="header">
-        <h1>\U0001f4dd Assessment: <span id="assess-role"></span></h1>
-        <p>Candidate: <span id="assess-name"></span> | <span id="assess-count"></span> Questions</p>
+<!-- ASSESSMENT SCREEN -->
+<div id="screen-assess" class="assess-wrapper" style="display:none">
+  <div class="assess-header">
+    <div class="info">
+      <h2 id="assess-title">Assessment</h2>
+      <p id="assess-subtitle"></p>
     </div>
-    <div class="timer" id="timer">\u23f1 --:--</div>
-    <div class="violation-bar" id="violation-bar">\u26a0 Tab switch detected! One more = auto-submit.</div>
-    <div class="progress-bar"><div id="progress" style="width:0%"></div></div>
-    <div id="questions-container"></div>
-    <div style="margin-top:1rem;text-align:center">
-        <p id="answered-text" style="margin-bottom:.5rem;font-weight:600;color:#64748B"></p>
-        <button class="btn" onclick="submitAssessment()" id="submit-btn">\u2705 Submit Assessment</button>
-    </div>
+    <div class="timer-badge" id="timer">⏱ --:--</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="violation-bar" id="violation-bar">⚠️ Tab switch detected! Violations: <strong id="violation-count">0</strong>/3</div>
+  <div id="question-area"></div>
+  <div class="nav-row">
+    <button class="btn-nav btn-prev" id="btn-prev" onclick="prevQuestion()">← Previous</button>
+    <button class="btn-nav btn-next" id="btn-next" onclick="nextQuestion()">Next →</button>
+  </div>
 </div>
 
-<!-- Result Screen -->
-<div id="result-screen" style="display:none">
-    <div class="header">
-        <h1>Assessment Complete</h1>
-        <p>Thank you for completing the assessment</p>
-    </div>
-    <div class="card result-card" id="result-content"></div>
-</div>
+<!-- RESULT SCREEN -->
+<div id="screen-result" class="result-wrapper" style="display:none">
+  <div class="result-card" id="result-card"></div>
+  <p class="footer-note" style="margin-top:1.5rem;color:#94A3B8">You may close this window now.</p>
 </div>
 
 <script>
-const TOKEN = "{{ token }}";
-let questions = [];
-let answers = {};
-let duration = 20;
-let timeLeft = 0;
-let timerInterval = null;
-let tabViolations = 0;
-let candidateId = "";
+var TOKEN = '{{ token }}';
+var questions = [];
+var answers = {};
+var currentQ = 0;
+var timerInterval = null;
+var timeLeft = 0;
+var violations = 0;
 
-// ═══ Login ═══
-async function doLogin() {
-    const user = document.getElementById('login-user').value;
-    const pass = document.getElementById('login-pass').value;
-    if (!user || !pass) { showToast('Enter both fields'); return; }
+async function startAssessment() {
+    var user = document.getElementById('username').value.trim();
+    var pw = document.getElementById('password').value.trim();
+    var errEl = document.getElementById('login-error');
+    var btn = document.getElementById('login-btn');
 
-    document.getElementById('login-btn').disabled = true;
-    document.getElementById('login-btn').textContent = '\u23f3 Verifying...';
+    if (!user || !pw) { errEl.textContent = 'Please enter both username and password'; errEl.style.display = ''; return; }
+    errEl.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Verifying...';
 
     try {
-        const res = await fetch(`/api/assess/verify?token=${TOKEN}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`);
-        const data = await res.json();
-        if (res.ok && data.valid) {
-            candidateId = data.candidate_id;
-            questions = data.questions;
-            duration = data.duration_minutes || 20;
-            document.getElementById('assess-role').textContent = data.role;
-            document.getElementById('assess-name').textContent = data.candidate_name;
-            document.getElementById('assess-count').textContent = questions.length;
-            renderQuestions();
-            startTimer();
-            startAntiCheat();
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('assess-screen').style.display = 'block';
-        } else {
-            showToast(data.detail || 'Invalid credentials');
-            document.getElementById('login-btn').disabled = false;
-            document.getElementById('login-btn').textContent = '\U0001f680 Start Assessment';
-        }
+        var res = await fetch('/api/assess/verify?token=' + TOKEN + '&username=' + encodeURIComponent(user) + '&password=' + encodeURIComponent(pw));
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Invalid credentials');
+
+        questions = data.questions || [];
+        timeLeft = (data.duration_minutes || 20) * 60;
+
+        document.getElementById('assess-title').textContent = data.candidate_name + ' — ' + data.role;
+        document.getElementById('assess-subtitle').textContent = questions.length + ' questions · ' + data.duration_minutes + ' minutes';
+
+        document.getElementById('screen-login').style.display = 'none';
+        document.getElementById('screen-assess').style.display = '';
+
+        renderQuestion();
+        startTimer();
+        setupAntiCheat();
     } catch(e) {
-        showToast('Network error');
-        document.getElementById('login-btn').disabled = false;
-        document.getElementById('login-btn').textContent = '\U0001f680 Start Assessment';
+        errEl.textContent = e.message;
+        errEl.style.display = '';
+    }
+    btn.disabled = false; btn.textContent = '🚀 Start Assessment';
+}
+
+function renderQuestion() {
+    if (questions.length === 0) return;
+    var q = questions[currentQ];
+    var total = questions.length;
+
+    document.getElementById('progress-fill').style.width = ((currentQ + 1) / total * 100) + '%';
+
+    var topicHtml = q.topic ? '<span class="q-topic">' + q.topic + '</span>' : '';
+    var html = '<div class="question-card">' +
+        '<div class="q-header"><div class="q-number">' + (currentQ + 1) + '</div><div><div class="q-text">' + q.q + '</div>' + topicHtml + '</div></div>' +
+        '<div class="options">';
+
+    for (var i = 0; i < q.options.length; i++) {
+        var sel = answers[currentQ] === i ? ' selected' : '';
+        html += '<div class="option' + sel + '" onclick="selectOption(' + i + ')">' +
+            '<div class="radio"></div><span>' + q.options[i] + '</span></div>';
+    }
+
+    html += '</div></div>';
+    html += '<div style="text-align:center;color:#94A3B8;font-size:.8rem;margin-top:.5rem">Question ' + (currentQ+1) + ' of ' + total + '</div>';
+
+    document.getElementById('question-area').innerHTML = html;
+
+    document.getElementById('btn-prev').style.display = currentQ === 0 ? 'none' : '';
+
+    if (currentQ === total - 1) {
+        document.getElementById('btn-next').className = 'btn-nav btn-submit';
+        document.getElementById('btn-next').textContent = '✅ Submit Assessment';
+        document.getElementById('btn-next').setAttribute('onclick', 'submitAssessment()');
+    } else {
+        document.getElementById('btn-next').className = 'btn-nav btn-next';
+        document.getElementById('btn-next').textContent = 'Next →';
+        document.getElementById('btn-next').setAttribute('onclick', 'nextQuestion()');
     }
 }
 
-// ═══ Render Questions ═══
-function renderQuestions() {
-    const c = document.getElementById('questions-container');
-    c.innerHTML = questions.map((q, i) => `
-        <div class="question" id="q-${i}">
-            <div class="q-num">Q${i+1} ${q.topic ? '('+q.topic+')' : ''}</div>
-            <div class="q-text">${q.q}</div>
-            ${q.options.map((o, j) => `
-                <label><input type="radio" name="q${i}" value="${j}" onchange="onAnswer(${i},${j})"> ${o}</label>
-            `).join('')}
-        </div>
-    `).join('');
-    updateProgress();
+function selectOption(idx) {
+    answers[currentQ] = idx;
+    renderQuestion();
 }
 
-function onAnswer(qi, ai) {
-    answers[qi] = ai;
-    updateProgress();
+function nextQuestion() {
+    if (currentQ < questions.length - 1) { currentQ++; renderQuestion(); }
 }
 
-function updateProgress() {
-    const n = Object.keys(answers).length;
-    const pct = (n / questions.length) * 100;
-    document.getElementById('progress').style.width = pct + '%';
-    document.getElementById('answered-text').textContent = `Answered: ${n} / ${questions.length}`;
+function prevQuestion() {
+    if (currentQ > 0) { currentQ--; renderQuestion(); }
 }
 
-// ═══ Timer ═══
 function startTimer() {
-    timeLeft = duration * 60;
-    timerInterval = setInterval(() => {
+    var el = document.getElementById('timer');
+    timerInterval = setInterval(function() {
         timeLeft--;
-        const m = Math.floor(timeLeft / 60);
-        const s = timeLeft % 60;
-        const el = document.getElementById('timer');
-        el.textContent = `\u23f1 ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        if (timeLeft <= 60) el.className = 'timer critical';
-        else if (timeLeft <= 300) el.className = 'timer warning';
-        if (timeLeft <= 0) { clearInterval(timerInterval); submitAssessment(); }
+        var m = Math.floor(timeLeft / 60);
+        var s = timeLeft % 60;
+        el.textContent = '⏱ ' + m + ':' + (s < 10 ? '0' : '') + s;
+
+        if (timeLeft <= 60) { el.className = 'timer-badge danger'; }
+        else if (timeLeft <= 300) { el.className = 'timer-badge warning'; }
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            submitAssessment();
+        }
     }, 1000);
 }
 
-// ═══ Anti-Cheat ═══
-function startAntiCheat() {
-    document.addEventListener('copy', e => e.preventDefault());
-    document.addEventListener('paste', e => e.preventDefault());
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-        if (e.ctrlKey && ['c','v','a','u','s','p'].includes(e.key.toLowerCase())) e.preventDefault();
-        if (e.key === 'F12') e.preventDefault();
-    });
-    document.addEventListener('visibilitychange', () => {
+function setupAntiCheat() {
+    document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
-            tabViolations++;
-            if (tabViolations === 1) {
-                document.getElementById('violation-bar').style.display = 'block';
-                showToast('\u26a0 Tab switch detected! Next time = auto-submit');
-            } else if (tabViolations >= 2) {
-                showToast('\U0001f6ab Force-submitting due to tab switches');
+            violations++;
+            document.getElementById('violation-bar').style.display = '';
+            document.getElementById('violation-count').textContent = violations;
+            if (violations >= 3) {
                 submitAssessment();
             }
         }
     });
-    // Disable text selection
-    document.body.style.userSelect = 'none';
-    document.body.style.webkitUserSelect = 'none';
 }
 
-// ═══ Submit ═══
 async function submitAssessment() {
-    clearInterval(timerInterval);
-    document.getElementById('submit-btn').disabled = true;
-    document.getElementById('submit-btn').textContent = '\u23f3 Submitting...';
+    if (timerInterval) clearInterval(timerInterval);
+    document.getElementById('btn-next').disabled = true;
+    document.getElementById('btn-next').textContent = 'Submitting...';
 
     try {
-        const res = await fetch('/api/assess/submit', {
+        var res = await fetch('/api/assess/submit', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({token: TOKEN, candidate_id: candidateId, answers: answers}),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: TOKEN,
+                candidate_id: document.getElementById('assess-title').textContent.split(' — ')[0].trim().replace(/.*CAND/, 'CAND'),
+                answers: answers,
+            }),
         });
-        const data = await res.json();
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Submit failed');
         showResult(data);
     } catch(e) {
-        showToast('Error submitting. Please try again.');
-        document.getElementById('submit-btn').disabled = false;
-        document.getElementById('submit-btn').textContent = '\u2705 Submit Assessment';
+        alert('Error: ' + e.message);
     }
 }
 
 function showResult(data) {
-    document.getElementById('assess-screen').style.display = 'none';
-    document.getElementById('timer').style.display = 'none';
-    document.getElementById('result-screen').style.display = 'block';
-    const cls = data.decision === 'PASS' ? 'pass' : 'fail';
-    const msg = data.decision === 'PASS'
-        ? '<p style="color:#10B981;font-size:1.2rem;font-weight:700;margin-top:1rem">\U0001f389 Congratulations! You PASSED!</p><p style="color:#64748B;margin-top:.5rem">The recruitment team will contact you for the interview.</p>'
-        : '<p style="color:#64748B;font-size:1.1rem;margin-top:1rem">Thank you for your time. The recruitment team will be in touch.</p>';
-    document.getElementById('result-content').innerHTML = `
-        <div class="score ${cls}">${data.score_percent}%</div>
-        <p style="color:#94A3B8">${data.correct}/${data.total} correct</p>
-        ${msg}
-        <p style="margin-top:2rem;color:#94A3B8;font-size:.85rem">You may close this page now.</p>
-    `;
-}
+    document.getElementById('screen-assess').style.display = 'none';
+    document.getElementById('screen-result').style.display = '';
 
-function showToast(msg) {
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 400); }, 3500);
+    var passed = data.decision === 'PASS';
+    var icon = passed ? '🎉' : '📊';
+    var msg = passed ? 'Congratulations! You passed the assessment.' : 'Thank you for completing the assessment.';
+
+    document.getElementById('result-card').innerHTML =
+        '<div class="result-icon">' + icon + '</div>' +
+        '<div class="result-score ' + (passed?'pass':'fail') + '">' + data.score_percent + '%</div>' +
+        '<div class="result-label">' + data.correct + ' out of ' + data.total + ' correct</div>' +
+        '<div class="result-badge ' + (passed?'pass':'fail') + '">' + data.decision + '</div>' +
+        '<p class="result-detail" style="margin-top:1.5rem">' + msg + '</p>';
 }
 </script>
 </body>
