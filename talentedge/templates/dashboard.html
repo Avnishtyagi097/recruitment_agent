@@ -95,6 +95,7 @@ tr:hover td{background:#F8FAFC}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideIn{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes progressPulse{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 @media(max-width:768px){.sidebar{display:none}.main{margin-left:0}.stat-row{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr}}
 </style>
 </head>
@@ -145,7 +146,16 @@ tr:hover td{background:#F8FAFC}
 
 <!-- PAGE: UPLOAD CV -->
 <div class="page" id="page-upload">
-    <div class="banner"><h1>📄 Upload CV & ATS Screening</h1><p>Upload a candidate's CV and analyze it against the job description</p></div>
+  <div class="banner"><h1>📄 Upload CV & ATS Screening</h1><p>Upload single or multiple CVs and analyze against the job description</p></div>
+
+  <!-- Mode Toggle -->
+  <div style="display:flex;gap:.5rem;margin-bottom:1.5rem">
+    <button class="btn btn-primary" id="mode-single-btn" onclick="setUploadMode('single')">📄 Single CV</button>
+    <button class="btn btn-outline" id="mode-batch-btn" onclick="setUploadMode('batch')">📦 Batch Upload</button>
+  </div>
+
+  <!-- ═══ SINGLE CV MODE (your existing upload UI) ═══ -->
+  <div id="upload-single-mode">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
         <div class="card">
             <h3>📎 Candidate CV</h3>
@@ -178,6 +188,84 @@ tr:hover td{background:#F8FAFC}
         🔍 Analyze CV & Generate ATS Score
     </button>
     <div id="ats-results" style="display:none"></div>
+  </div>
+
+  <!-- ═══ BATCH CV UPLOAD MODE ═══ -->
+  <div id="upload-batch-mode" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+      <!-- LEFT: Multi-file drop zone -->
+      <div class="card">
+        <h3>📦 Upload Multiple CVs</h3>
+        <div class="file-drop" id="batch-file-drop" onclick="document.getElementById('batch-file-input').click()">
+          <div class="icon">📦</div>
+          <p>Drag & drop multiple CVs or <strong>click to browse</strong></p>
+          <p style="font-size:.8rem;color:#94A3B8">PDF, DOCX, or TXT — up to 20 files</p>
+        </div>
+        <input type="file" id="batch-file-input" multiple accept=".pdf,.docx,.txt,.doc" style="display:none"
+               onchange="onBatchFileSelect(this)">
+        <!-- File list -->
+        <div id="batch-file-list" style="margin-top:1rem;display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+            <strong style="font-size:.85rem;color:#334155">📋 Selected Files (<span id="batch-file-count">0</span>)</strong>
+            <button class="btn btn-sm btn-danger" onclick="clearBatchFiles()">🗑 Clear All</button>
+          </div>
+          <div id="batch-file-items" style="max-height:220px;overflow-y:auto;border:1px solid #E2E8F0;border-radius:10px;padding:.5rem"></div>
+        </div>
+        <div class="form-group" style="margin-top:1rem">
+          <label>Role Applied For</label>
+          <select id="batch-role-select">
+            <option>Data Engineer</option>
+            <option>Software Engineer</option>
+            <option>Data Analyst</option>
+            <option>DevOps Engineer</option>
+            <option>Custom</option>
+          </select>
+        </div>
+      </div>
+      <!-- RIGHT: Job Description -->
+      <div class="card">
+        <h3>📋 Job Description</h3>
+        <div class="form-group">
+          <textarea id="batch-jd-text" rows="14" placeholder="Paste the job description here (applies to all CVs)..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch progress -->
+    <div id="batch-progress" style="display:none;margin-top:1rem">
+      <div class="card" style="text-align:center;padding:1.5rem">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">⏳</div>
+        <strong id="batch-progress-text">Processing CVs...</strong>
+        <p style="color:#64748B;font-size:.85rem;margin:.3rem 0 1rem">This may take a moment for large batches</p>
+        <div style="height:6px;background:#E2E8F0;border-radius:3px;overflow:hidden;position:relative">
+          <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,#4F46E5,transparent);animation:progressPulse 1.5s ease-in-out infinite"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analyze button -->
+    <button class="btn btn-primary" id="batch-analyze-btn" onclick="runBatchATS()" disabled
+            style="margin-top:1rem;width:100%;padding:1rem;font-size:1rem;opacity:0.5">
+      📦 Analyze All CVs
+    </button>
+
+    <!-- Batch results -->
+    <div id="batch-results" style="display:none;margin-top:1.5rem">
+      <div class="card">
+        <h3>📊 Batch Results</h3>
+        <div class="stat-row" id="batch-stats"></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>File</th><th>Candidate</th><th>Email</th>
+              <th>ATS Score</th><th>Decision</th><th>Status</th>
+            </tr></thead>
+            <tbody id="batch-results-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- PAGE: CANDIDATES -->
@@ -628,6 +716,173 @@ async function deleteAssessment(id) {
     else toast('Failed to delete','error');
 }
 
+// ═══════════════════════════════════════════════════════════
+//  BATCH CV UPLOAD
+// ═══════════════════════════════════════════════════════════
+let batchFiles = [];
+
+function setUploadMode(mode) {
+    const singleDiv = document.getElementById('upload-single-mode');
+    const batchDiv = document.getElementById('upload-batch-mode');
+    const singleBtn = document.getElementById('mode-single-btn');
+    const batchBtn = document.getElementById('mode-batch-btn');
+    if (mode === 'single') {
+        singleDiv.style.display = '';
+        batchDiv.style.display = 'none';
+        singleBtn.className = 'btn btn-primary';
+        batchBtn.className = 'btn btn-outline';
+    } else {
+        singleDiv.style.display = 'none';
+        batchDiv.style.display = '';
+        batchBtn.className = 'btn btn-primary';
+        singleBtn.className = 'btn btn-outline';
+        // Sync JD from single to batch if batch JD is empty
+        const sJD = document.getElementById('jd-text');
+        const bJD = document.getElementById('batch-jd-text');
+        if (sJD && bJD && !bJD.value && sJD.value) bJD.value = sJD.value;
+    }
+}
+
+function onBatchFileSelect(input) {
+    if (input.files.length > 0) addBatchFiles(Array.from(input.files));
+    input.value = '';
+}
+
+function addBatchFiles(newFiles) {
+    const allowed = ['.pdf', '.docx', '.txt', '.doc'];
+    for (const f of newFiles) {
+        const ext = '.' + f.name.split('.').pop().toLowerCase();
+        if (!allowed.includes(ext)) { toast('Skipped ' + f.name + ' — unsupported format', 'error'); continue; }
+        if (batchFiles.length >= 20) { toast('Maximum 20 files per batch', 'error'); break; }
+        const dup = batchFiles.some(bf => bf.name === f.name && bf.size === f.size);
+        if (!dup) batchFiles.push(f);
+    }
+    renderBatchFileList();
+}
+
+function removeBatchFile(idx) { batchFiles.splice(idx, 1); renderBatchFileList(); }
+function clearBatchFiles() { batchFiles = []; renderBatchFileList(); }
+
+function renderBatchFileList() {
+    const listDiv = document.getElementById('batch-file-list');
+    const itemsDiv = document.getElementById('batch-file-items');
+    const countSpan = document.getElementById('batch-file-count');
+    const btn = document.getElementById('batch-analyze-btn');
+    if (batchFiles.length === 0) {
+        listDiv.style.display = 'none';
+        btn.disabled = true; btn.style.opacity = '0.5';
+        btn.textContent = '\uD83D\uDCE6 Analyze All CVs';
+        return;
+    }
+    listDiv.style.display = '';
+    countSpan.textContent = batchFiles.length;
+    btn.disabled = false; btn.style.opacity = '1';
+    btn.textContent = '\uD83D\uDCE6 Analyze ' + batchFiles.length + ' CV' + (batchFiles.length > 1 ? 's' : '');
+
+    const icons = { pdf: '\uD83D\uDCD5', docx: '\uD83D\uDCD8', doc: '\uD83D\uDCD8', txt: '\uD83D\uDCC4' };
+    itemsDiv.innerHTML = batchFiles.map((f, i) => {
+        const ext = f.name.split('.').pop().toLowerCase();
+        const icon = icons[ext] || '\uD83D\uDCC4';
+        const size = f.size < 1024 ? f.size + ' B' : (f.size / 1024).toFixed(1) + ' KB';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .6rem;border-bottom:1px solid #F1F5F9">' +
+            '<span style="font-size:.85rem">' + icon + ' ' + f.name + ' <span style="color:#94A3B8;font-size:.75rem">(' + size + ')</span></span>' +
+            '<button onclick="removeBatchFile(' + i + ')" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:1rem" title="Remove">\u2715</button>' +
+            '</div>';
+    }).join('');
+}
+
+// Batch drag & drop
+(function() {
+    const dz = document.getElementById('batch-file-drop');
+    if (dz) {
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+        dz.addEventListener('drop', e => {
+            e.preventDefault(); dz.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) addBatchFiles(Array.from(e.dataTransfer.files));
+        });
+    }
+})();
+
+// Batch role-select JD auto-fill (reuses existing JD object)
+document.getElementById('batch-role-select').addEventListener('change', function() {
+    const jd = JD[this.value];
+    if (jd) document.getElementById('batch-jd-text').value = jd.replace(/\\n/g, '\n');
+});
+
+async function runBatchATS() {
+    if (batchFiles.length === 0) { toast('Please select CV files', 'error'); return; }
+    const jd = document.getElementById('batch-jd-text').value;
+    if (!jd.trim()) { toast('Please enter a job description', 'error'); return; }
+    const role = document.getElementById('batch-role-select').value;
+
+    const btn = document.getElementById('batch-analyze-btn');
+    btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = '\u23F3 Processing...';
+    document.getElementById('batch-progress').style.display = '';
+    document.getElementById('batch-results').style.display = 'none';
+    document.getElementById('batch-progress-text').textContent =
+        'Processing ' + batchFiles.length + ' CV' + (batchFiles.length > 1 ? 's' : '') + '...';
+
+    const formData = new FormData();
+    batchFiles.forEach(f => formData.append('files', f));
+    formData.append('role_applied', role);
+    formData.append('jd_text', jd);
+
+    try {
+        const res = await fetch('/api/candidates/upload-batch', {
+            method: 'POST', body: formData, credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Batch upload failed');
+
+        showBatchResults(data);
+        toast('Processed ' + data.processed + ' of ' + data.total + ' CVs!', 'success');
+        loadStats();
+    } catch(e) {
+        toast(e.message || 'Network error', 'error');
+    }
+    document.getElementById('batch-progress').style.display = 'none';
+    btn.disabled = false; btn.style.opacity = '1';
+    btn.textContent = '\uD83D\uDCE6 Analyze ' + batchFiles.length + ' CV' + (batchFiles.length > 1 ? 's' : '');
+}
+
+function showBatchResults(data) {
+    document.getElementById('batch-results').style.display = '';
+
+    // Stat cards
+    const stats = [
+        { label: 'Total', value: data.total, cls: 'blue' },
+        { label: 'Processed', value: data.processed, cls: 'green' },
+        { label: 'Passed ATS', value: data.passed_ats, cls: 'green' },
+        { label: 'Failed ATS', value: data.failed_ats, cls: 'red' },
+        { label: 'Review', value: data.manual_review, cls: 'orange' },
+    ];
+    document.getElementById('batch-stats').innerHTML = stats.map(s =>
+        '<div class="stat-card ' + s.cls + '"><div class="val">' + s.value + '</div><div class="lbl">' + s.label + '</div></div>'
+    ).join('');
+
+    // Results table
+    document.getElementById('batch-results-body').innerHTML = data.results.map(r => {
+        if (r.success) {
+            const scoreClass = r.ats_score > 85 ? 'score-high' : (r.ats_score >= 75 ? 'score-mid' : 'score-low');
+            const decBadge = r.ats_decision === 'PASS' ? 'badge-pass' : (r.status === 'Manual Review' ? 'badge-review' : 'badge-fail');
+            const statusMap = {'Passed ATS':'badge-pass','Failed ATS':'badge-fail','Manual Review':'badge-review'};
+            return '<tr>' +
+                '<td>\uD83D\uDCC4 ' + r.file + '</td>' +
+                '<td><strong>' + r.name + '</strong><br><span style="color:#94A3B8;font-size:.75rem">' + r.candidate_id + '</span></td>' +
+                '<td>' + (r.email || '\u2014') + '</td>' +
+                '<td><div class="score-circle ' + scoreClass + '">' + r.ats_score + '</div></td>' +
+                '<td><span class="badge ' + decBadge + '">' + r.ats_decision + '</span></td>' +
+                '<td><span class="badge ' + (statusMap[r.status] || 'badge-pending') + '">' + r.status + '</span></td>' +
+                '</tr>';
+        } else {
+            return '<tr style="background:#FEF2F2">' +
+                '<td>\uD83D\uDCC4 ' + r.file + '</td>' +
+                '<td colspan="5" style="color:#EF4444">\u274C ' + (r.detail || 'Processing failed') + '</td>' +
+                '</tr>';
+        }
+    }).join('');
+}
 
 // ═══ Init ═══
 loadStats();
