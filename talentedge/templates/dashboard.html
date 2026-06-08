@@ -96,8 +96,10 @@ tr:hover td{background:#F8FAFC}
 @keyframes slideIn{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes progressPulse{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+#analytics-metrics{grid-template-columns:repeat(6,1fr)}
 @media(max-width:768px){.sidebar{display:none}.main{margin-left:0}.stat-row{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body>
 
@@ -111,6 +113,7 @@ tr:hover td{background:#F8FAFC}
         <a onclick="showPage('logs')" data-page="logs">📋 Pipeline Logs</a>
         <a onclick="showPage('emails')" data-page="emails">📧 Email Logs</a>
         <a onclick="showPage('interviews')" data-page="interviews">📅 Interviews</a>
+        <a onclick="showPage('analytics')" data-page="analytics">📊 Analytics</a>
         <a onclick="showPage('assessments')" data-page="assessments">📝 Assessments</a>
     </nav>
     <div class="user-box">
@@ -493,6 +496,38 @@ tr:hover td{background:#F8FAFC}
   </div>
 </div>
 
+<!-- PAGE: ANALYTICS -->
+<div class="page" id="page-analytics">
+  <div class="banner"><h1>📊 Analytics & Insights</h1><p>Track your recruitment pipeline performance at a glance</p></div>
+
+  <div class="stat-row" id="analytics-metrics"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem">
+    <div class="card"><h3>📈 Pipeline Funnel</h3><canvas id="chart-funnel"></canvas></div>
+    <div class="card"><h3>🍩 Status Breakdown</h3><div style="max-width:320px;margin:auto"><canvas id="chart-status"></canvas></div></div>
+    <div class="card"><h3>📊 ATS Score Distribution</h3><canvas id="chart-ats-dist"></canvas></div>
+    <div class="card"><h3>💼 Roles Breakdown</h3><canvas id="chart-roles"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem"><h3>📅 Monthly Trend (Last 6 months)</h3><canvas id="chart-monthly"></canvas></div>
+
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;margin-top:1.5rem">
+    <div class="card">
+      <h3>📧 Email Stats</h3>
+      <div id="email-stats-cards" style="display:flex;flex-direction:column;gap:.75rem;margin-top:.5rem"></div>
+    </div>
+    <div class="card">
+      <h3>🕐 Recent Activity</h3>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Time</th><th>Candidate</th><th>Stage</th><th>Decision</th><th>By</th></tr></thead>
+          <tbody id="recent-activity-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <script>
@@ -511,6 +546,7 @@ function showPage(name) {
     if (name === 'emails') loadEmails();
     if (name === 'assessments') loadAssessmentsList();
     if (name === 'interviews') loadInterviews();
+    if (name === 'analytics') loadAnalytics();
 }
 
 // ═══ Toast ═══
@@ -1128,6 +1164,110 @@ async function markResult(candidateId, decision) {
     const res = await api(`/api/interviews/${candidateId}/result?decision=${decision}`,{method:'PATCH'});
     if(res&&res.ok) { toast(`Candidate ${decision}!`,'success'); loadInterviews(); loadStats(); }
     else toast('Failed','error');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ANALYTICS DASHBOARD
+// ═══════════════════════════════════════════════════════════
+let chartInstances = {};
+function destroyChart(id) { if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];} }
+
+async function loadAnalytics() {
+    try {
+        const res = await api('/api/analytics/');
+        if (!res || !res.ok) return;
+        const data = await res.json();
+        const o = data.overview;
+
+        // Key Metrics
+        document.getElementById('analytics-metrics').innerHTML = [
+            {label:'Total Candidates',value:o.total_candidates,cls:'blue'},
+            {label:'ATS Pass Rate',value:data.ats_pass_rate+'%',cls:data.ats_pass_rate>=50?'green':'orange'},
+            {label:'Avg ATS Score',value:data.avg_ats_score,cls:data.avg_ats_score>=70?'green':'orange'},
+            {label:'Assessment Pass',value:data.assessment_pass_rate+'%',cls:'blue'},
+            {label:'Hired',value:o.hired,cls:'green'},
+            {label:'Emails Sent',value:data.email_stats.total,cls:'blue'},
+        ].map(s=>`<div class="stat-card ${s.cls}"><div class="val">${s.value}</div><div class="lbl">${s.label}</div></div>`).join('');
+
+        const colors = ['#4F46E5','#10B981','#F59E0B','#EF4444','#7C3AED','#EC4899','#06B6D4','#84CC16'];
+
+        // Pipeline Funnel
+        destroyChart('funnel');
+        const funnel = data.pipeline_funnel || [];
+        chartInstances['funnel'] = new Chart(document.getElementById('chart-funnel'), {
+            type:'bar',
+            data:{labels:funnel.map(f=>f.stage),datasets:[{data:funnel.map(f=>f.count),backgroundColor:funnel.map((_,i)=>colors[i%colors.length]),borderRadius:6,borderSkipped:false}]},
+            options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{display:false}},y:{grid:{display:false}}}}
+        });
+
+        // Status Doughnut
+        destroyChart('status');
+        const sb = data.status_breakdown || [];
+        chartInstances['status'] = new Chart(document.getElementById('chart-status'), {
+            type:'doughnut',
+            data:{labels:sb.map(s=>s.status),datasets:[{data:sb.map(s=>s.count),backgroundColor:sb.map((_,i)=>colors[i%colors.length]),borderWidth:2}]},
+            options:{responsive:true,cutout:'60%',plugins:{legend:{position:'bottom',labels:{padding:12,font:{size:11}}}}}
+        });
+
+        // ATS Score Distribution
+        destroyChart('atsDist');
+        const ad = data.ats_score_distribution || [];
+        chartInstances['atsDist'] = new Chart(document.getElementById('chart-ats-dist'), {
+            type:'bar',
+            data:{labels:ad.map(a=>a.range),datasets:[{label:'Candidates',data:ad.map(a=>a.count),backgroundColor:['#EF4444','#F59E0B','#F59E0B','#10B981','#4F46E5'],borderRadius:6,borderSkipped:false}]},
+            options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{grid:{display:false}}}}
+        });
+
+        // Roles Breakdown
+        destroyChart('roles');
+        const rb = data.role_breakdown || [];
+        chartInstances['roles'] = new Chart(document.getElementById('chart-roles'), {
+            type:'bar',
+            data:{labels:rb.map(r=>r.role),datasets:[{data:rb.map(r=>r.count),backgroundColor:rb.map((_,i)=>colors[i%colors.length]),borderRadius:6,borderSkipped:false}]},
+            options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{display:false}},y:{grid:{display:false}}}}
+        });
+
+        // Monthly Trend
+        destroyChart('monthly');
+        const mt = data.monthly_trend || [];
+        chartInstances['monthly'] = new Chart(document.getElementById('chart-monthly'), {
+            type:'line',
+            data:{labels:mt.map(m=>m.month),datasets:[
+                {label:'Total',data:mt.map(m=>m.candidates),borderColor:'#4F46E5',backgroundColor:'rgba(79,70,229,.1)',fill:true,tension:.4,borderWidth:2},
+                {label:'Passed',data:mt.map(m=>m.passed),borderColor:'#10B981',backgroundColor:'rgba(16,185,129,.1)',fill:true,tension:.4,borderWidth:2},
+                {label:'Failed',data:mt.map(m=>m.failed),borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.4,borderWidth:2},
+            ]},
+            options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{grid:{display:false}}}}
+        });
+
+        // Email Stats
+        const es = data.email_stats;
+        document.getElementById('email-stats-cards').innerHTML = [
+            {label:'Sent',value:es.sent,icon:'✅',bg:'#F0FDF4',color:'#059669'},
+            {label:'Queued',value:es.queued,icon:'⏳',bg:'#FFFBEB',color:'#D97706'},
+            {label:'Failed',value:es.failed,icon:'❌',bg:'#FEF2F2',color:'#DC2626'},
+            {label:'Total',value:es.total,icon:'📧',bg:'#EEF2FF',color:'#4F46E5'},
+        ].map(s=>`<div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:${s.bg};border-radius:10px">
+            <span style="font-size:1.5rem">${s.icon}</span>
+            <div><div style="font-size:1.2rem;font-weight:800;color:${s.color}">${s.value}</div><div style="font-size:.75rem;color:${s.color}">${s.label}</div></div>
+        </div>`).join('');
+
+        // Recent Activity
+        const ra = data.recent_activity || [];
+        document.getElementById('recent-activity-body').innerHTML = ra.length === 0
+            ? '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:1.5rem">No activity yet</td></tr>'
+            : ra.map(a=>{
+                const decCls = {PASS:'badge-pass',FAIL:'badge-fail',SCHEDULED:'badge-review',CONFIRMED:'badge-pass',CANCELLED:'badge-fail',HIRED:'badge-pass',REJECTED:'badge-fail'};
+                return `<tr>
+                    <td style="font-size:.8rem;color:#64748B;white-space:nowrap">${a.timestamp?new Date(a.timestamp).toLocaleString():'—'}</td>
+                    <td style="font-size:.85rem"><strong>${a.candidate_id}</strong></td>
+                    <td style="font-size:.85rem">${a.stage}</td>
+                    <td><span class="badge ${decCls[a.decision]||'badge-pending'}">${a.decision}</span></td>
+                    <td style="font-size:.8rem;color:#64748B">${a.owner}</td>
+                </tr>`;
+            }).join('');
+
+    } catch(e) { console.error('Analytics error:',e); toast('Failed to load analytics','error'); }
 }
 
 // ═══ Init ═══
