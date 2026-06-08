@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
 from sqlalchemy.orm import Session
 from database import get_db
@@ -75,14 +76,11 @@ async def upload_cv(
     owner = db.query(User).filter(User.id == user.id).first()
 
     if ats["decision"] == "PASS":
-        # Send assessment invitation to candidate
         send_assessment_invitation(db, candidate)
-        # Notify recruiter
         if owner:
             send_recruiter_notification(db, owner.email, candidate, "ATS PASSED — Assessment Sent")
 
     elif not ats["requires_review"]:
-        # ATS FAIL — send rejection
         send_rejection_email(db, candidate, stage="ATS")
         if owner:
             send_recruiter_notification(db, owner.email, candidate, "ATS FAILED — Rejected")
@@ -94,6 +92,99 @@ async def upload_cv(
     }
 
 
+# ═══════════════════════════════════════════════════════════════
+#  BATCH CV UPLOAD — Process multiple CVs in one request
+# ═══════════════════════════════════════════════════════════════
+@router.post("/upload-batch")
+async def upload_batch(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    role_applied: str = Form(...),
+    jd_text: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """Upload multiple CVs at once. Each file is parsed, ATS-scored, and emailed independently."""
+    user = _get_user(request, db)
+    owner = db.query(User).filter(User.id == user.id).first()
+
+    from services.email_service import send_assessment_invitation, send_rejection_email, send_recruiter_notification
+
+    results = []
+    counters = {"processed": 0, "errors": 0, "passed_ats": 0, "failed_ats": 0, "manual_review": 0}
+    batch_ts = datetime.now().strftime("%Y%m%d%H%M%S")
+
+    for idx, file in enumerate(files, start=1):
+        filename = file.filename or f"file_{idx}"
+        try:
+            file_bytes = await file.read()
+            cv_text = parse_cv(file_bytes, filename)
+
+            if not cv_text:
+                results.append({"file": filename, "success": False, "detail": "Could not extract text from CV"})
+                counters["errors"] += 1
+                continue
+
+            name = extract_name(cv_text) or filename.rsplit(".", 1)[0].replace("_", " ").title()
+            email = extract_email(cv_text)
+            ats = calculate_ats_score(cv_text, jd_text)
+
+            cand_id = f"CAND-{batch_ts}-{idx:03d}"
+            status = (
+                "Passed ATS" if ats["decision"] == "PASS"
+                else ("Manual Review" if ats["requires_review"] else "Failed ATS")
+            )
+
+            candidate = Candidate(
+                candidate_id=cand_id, owner_id=user.id,
+                name=name, email=email, role_applied=role_applied,
+                cv_text=cv_text[:1000],
+                ats_score=ats["ats_score"], ats_decision=ats["decision"],
+                ats_result_json=json.dumps(ats), status=status,
+            )
+            db.add(candidate)
+            db.commit()
+            db.refresh(candidate)
+
+            log = PipelineLog(
+                candidate_db_id=candidate.id, candidate_id=cand_id,
+                stage="ATS_SCREENING", decision=ats["decision"],
+                score=str(ats["ats_score"]), reason=ats["reasoning"],
+                next_action="Send Assessment" if ats["decision"] == "PASS" else "Send Rejection",
+            )
+            db.add(log)
+            db.commit()
+
+            # Auto-email per candidate
+            if ats["decision"] == "PASS":
+                send_assessment_invitation(db, candidate)
+                if owner:
+                    send_recruiter_notification(db, owner.email, candidate, "ATS PASSED — Assessment Sent")
+                counters["passed_ats"] += 1
+            elif ats["requires_review"]:
+                counters["manual_review"] += 1
+            else:
+                send_rejection_email(db, candidate, stage="ATS")
+                if owner:
+                    send_recruiter_notification(db, owner.email, candidate, "ATS FAILED — Rejected")
+                counters["failed_ats"] += 1
+
+            counters["processed"] += 1
+            results.append({
+                "file": filename, "success": True,
+                "candidate_id": cand_id, "name": name, "email": email,
+                "ats_score": ats["ats_score"], "ats_decision": ats["decision"], "status": status,
+            })
+
+        except Exception as e:
+            db.rollback()
+            results.append({"file": filename, "success": False, "detail": str(e)})
+            counters["errors"] += 1
+
+    return {
+        "total": len(files),
+        **counters,
+        "results": results,
+    }
 
 
 @router.post("/ats-score", response_model=ATSResponse)
@@ -116,7 +207,6 @@ def run_ats(data: ATSRequest, request: Request, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(candidate)
 
-    # Log
     log = PipelineLog(
         candidate_db_id=candidate.id, candidate_id=cand_id,
         stage="ATS_SCREENING", decision=ats["decision"],
@@ -183,7 +273,6 @@ def update_status(candidate_id: str, status: str, request: Request, db: Session 
     db.add(log)
     db.commit()
 
-
     # Email on status change
     from services.email_service import send_assessment_invitation, send_rejection_email
     if status == "Assessment Sent":
@@ -192,5 +281,3 @@ def update_status(candidate_id: str, status: str, request: Request, db: Session 
         send_rejection_email(db, cand, stage="ATS")
 
     return {"message": f"Status updated to {status}"}
-
-
