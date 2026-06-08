@@ -11,10 +11,57 @@ from models import EmailLog, AssessmentCredential, Candidate
 from config import settings
 
 
+# def _send_smtp(to_email: str, subject: str, html: str) -> tuple:
+#     """Send HTML email via SMTP. Returns (success, detail)."""
+#     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+#         return False, "SMTP not configured"
+#     try:
+#         msg = MIMEMultipart("alternative")
+#         msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_USER}>"
+#         msg["To"] = to_email
+#         msg["Subject"] = subject
+#         msg.attach(MIMEText(html, "html", "utf-8"))
+#         with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as s:
+#             s.ehlo(); s.starttls(); s.ehlo()
+#             s.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+#             s.sendmail(settings.SMTP_USER, to_email, msg.as_string())
+#         return True, "Sent successfully"
+#     except Exception as e:
+#         return False, str(e)
+
+import requests  # Add this import at the top
+
 def _send_smtp(to_email: str, subject: str, html: str) -> tuple:
-    """Send HTML email via SMTP. Returns (success, detail)."""
+    """Send HTML email via Resend API (works on Railway). Falls back to SMTP."""
+    
+    # --- Option A: Resend API (recommended for Railway) ---
+    resend_key = getattr(settings, 'RESEND_API_KEY', None) or ""
+    if resend_key:
+        try:
+            resp = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": f"{settings.SMTP_FROM_NAME} <onboarding@resend.dev>",
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": html,
+                },
+                timeout=15,
+            )
+            if resp.status_code in (200, 201):
+                return True, "Sent via Resend"
+            else:
+                return False, f"Resend error: {resp.status_code} {resp.text[:200]}"
+        except Exception as e:
+            return False, f"Resend failed: {str(e)}"
+
+    # --- Option B: Fallback to SMTP (works locally) ---
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        return False, "SMTP not configured"
+        return False, "No email service configured"
     try:
         msg = MIMEMultipart("alternative")
         msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_USER}>"
@@ -25,7 +72,7 @@ def _send_smtp(to_email: str, subject: str, html: str) -> tuple:
             s.ehlo(); s.starttls(); s.ehlo()
             s.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
             s.sendmail(settings.SMTP_USER, to_email, msg.as_string())
-        return True, "Sent successfully"
+        return True, "Sent via SMTP"
     except Exception as e:
         return False, str(e)
 
