@@ -1,5 +1,7 @@
 <!-- v3.1 -->
 <!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -309,7 +311,9 @@ function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
-    document.querySelector(`[data-page="${name}"]`).classList.add('active');
+    // document.querySelector(`[data-page="${name}"]`).classList.add('active');
+    const navLink = document.querySelector(`[data-page="${name}"]`);
+    if (navLink) navLink.classList.add('active');
     if (name === 'home') loadStats();
     if (name === 'candidates') loadCandidates();
     if (name === 'logs') loadLogs();
