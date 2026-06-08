@@ -20,12 +20,15 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_HOURS: int = 24
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # SMTP
+    # SMTP (works locally)
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_NAME: str = "TalentEdge Recruitment"
+
+    # Resend API (works on Railway)
+    RESEND_API_KEY: str = ""
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
