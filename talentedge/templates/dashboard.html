@@ -235,7 +235,7 @@ tr:hover td{background:#F8FAFC}
         <div class="card">
             <h3>📤 Upload JSON</h3>
             <p style="color:#64748B;font-size:.85rem;margin-bottom:1rem">Upload a JSON file with questions in the required format.</p>
-            <pre style="background:#F8FAFC;padding:.8rem;border-radius:8px;font-size:.75rem;overflow-x:auto;border:1px solid #E2E8F0;margin-bottom:1rem">[{"q":"Question?","options":["A","B","C","D"],"answer":0,"topic":"SQL","difficulty":"easy"}]</pre>
+            <pre style="background:#F8FAFC;padding:.8rem;border-radius:8px;font-size:.75rem;overflow-x:auto;border:1px solid #E2E8F0;margin-bottom:1rem">{% raw %}[{"q":"Question?","options":["A","B","C","D"],"answer":0,"topic":"SQL","difficulty":"easy"}]{% endraw %}</pre>
             <form id="json-upload-form" onsubmit="event.preventDefault(); uploadAssessment('json')">
                 <div class="form-group"><label>JSON File</label><input type="file" id="json-file" accept=".json" required></div>
                 <div class="form-row">
