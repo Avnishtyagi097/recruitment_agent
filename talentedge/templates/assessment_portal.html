@@ -28,6 +28,21 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
 .error-msg{background:#FEF2F2;color:#DC2626;padding:.6rem 1rem;border-radius:10px;font-size:.85rem;margin-top:1rem;display:none}
 .footer-note{text-align:center;margin-top:1.5rem;color:#64748B;font-size:.8rem}
 
+/* Camera Permission Screen */
+.camera-wrapper{width:100%;max-width:500px;padding:2rem;display:none}
+.camera-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-radius:20px;padding:2.5rem;box-shadow:0 25px 50px rgba(0,0,0,.25);text-align:center}
+.camera-card h2{font-size:1.3rem;font-weight:700;color:#1E293B;margin-bottom:.5rem}
+.camera-card .sub{color:#64748B;font-size:.85rem;margin-bottom:1.5rem;line-height:1.5}
+.camera-preview-box{width:180px;height:180px;border-radius:50%;margin:0 auto 1.5rem;overflow:hidden;background:#1E293B;border:4px solid #10B981;position:relative;display:flex;align-items:center;justify-content:center}
+.camera-preview-box video{width:100%;height:100%;object-fit:cover}
+.camera-preview-box .placeholder{color:#475569;font-size:3rem}
+.camera-denied{background:#FEF2F2;color:#DC2626;padding:.8rem 1rem;border-radius:10px;font-size:.85rem;margin-top:1rem;display:none;line-height:1.5}
+.camera-features{display:flex;gap:1rem;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap}
+.camera-feature{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:#475569;background:#F1F5F9;padding:.4rem .8rem;border-radius:8px;font-weight:500}
+.btn-camera{padding:.85rem 2rem;border:none;border-radius:12px;background:linear-gradient(135deg,#059669,#10B981);color:white;font-size:1rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.btn-camera:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(16,185,129,.3)}
+.btn-camera:disabled{opacity:.6;transform:none;cursor:not-allowed}
+
 /* Assessment Screen */
 .assess-wrapper{width:100%;max-width:800px;padding:1.5rem}
 .assess-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
@@ -43,6 +58,17 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
 .progress-fill{height:100%;background:linear-gradient(90deg,#10B981,#34D399);border-radius:8px;transition:width .5s ease}
 
 .violation-bar{background:rgba(239,68,68,.15);backdrop-filter:blur(10px);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;padding:.6rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:.85rem;font-weight:600;display:none;text-align:center}
+
+/* Floating camera during assessment */
+.cam-float{position:fixed;top:1rem;left:1rem;width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #10B981;box-shadow:0 5px 20px rgba(0,0,0,.3);z-index:999;background:#0F172A;transition:border-color .3s}
+.cam-float video{width:100%;height:100%;object-fit:cover}
+.cam-float.violation{border-color:#EF4444;animation:pulse 1s infinite}
+.cam-float .rec-dot{position:absolute;top:4px;right:4px;width:10px;height:10px;background:#EF4444;border-radius:50%;animation:pulse 1.5s infinite}
+
+/* Warning toast */
+.warning-toast{position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.95);backdrop-filter:blur(10px);color:white;padding:1rem 2rem;border-radius:14px;font-weight:700;font-size:.95rem;z-index:10000;box-shadow:0 10px 30px rgba(239,68,68,.3);display:none;text-align:center;max-width:90%}
+.warning-toast.show{display:block;animation:slideDown .4s ease}
+@keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
 .question-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-radius:16px;padding:2rem;box-shadow:0 10px 30px rgba(0,0,0,.15);margin-bottom:1rem}
 .q-header{display:flex;align-items:flex-start;gap:.8rem;margin-bottom:1.2rem}
@@ -78,12 +104,19 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
 .result-badge.pass{background:#D1FAE5;color:#065F46}
 .result-badge.fail{background:#FEE2E2;color:#991B1B}
 .result-detail{color:#64748B;font-size:.9rem;line-height:1.6;margin-top:1rem}
-
-/* Anti-cheat: disable text selection on assessment */
 #screen-assess{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
 </style>
 </head>
 <body>
+
+<!-- WARNING TOAST -->
+<div class="warning-toast" id="warning-toast"></div>
+
+<!-- FLOATING CAMERA (during assessment) -->
+<div class="cam-float" id="cam-float" style="display:none">
+  <video id="cam-float-video" autoplay muted playsinline></video>
+  <div class="rec-dot"></div>
+</div>
 
 <!-- LOGIN SCREEN -->
 <div id="screen-login" class="login-wrapper">
@@ -102,10 +135,35 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
       <label>Password</label>
       <input type="password" id="password" placeholder="Enter your password">
     </div>
-    <button class="btn-login" id="login-btn" onclick="startAssessment()">&#x1F680; Start Assessment</button>
+    <button class="btn-login" id="login-btn" onclick="startLogin()">&#x1F680; Start Assessment</button>
     <div class="error-msg" id="login-error"></div>
   </div>
-  <p class="footer-note">&#x1F512; Your session is monitored. Tab switching will be flagged.</p>
+  <p class="footer-note">&#x1F512; Camera required. Tab switching monitored.</p>
+</div>
+
+<!-- CAMERA PERMISSION SCREEN -->
+<div id="screen-camera" class="camera-wrapper">
+  <div class="brand">
+    <div class="logo">&#x1F680; <span>TalentEdge</span> AI</div>
+  </div>
+  <div class="camera-card">
+    <h2>&#x1F4F7; Camera Permission Required</h2>
+    <p class="sub">We need camera access to verify your identity during the assessment. Your video is recorded for proctoring purposes.</p>
+    <div class="camera-preview-box" id="camera-preview-box">
+      <div class="placeholder" id="camera-placeholder">&#x1F4F7;</div>
+      <video id="camera-preview" autoplay muted playsinline style="display:none"></video>
+    </div>
+    <div class="camera-features">
+      <div class="camera-feature">&#x1F512; Secure</div>
+      <div class="camera-feature">&#x1F4F9; Proctored</div>
+      <div class="camera-feature">&#x26A0;&#xFE0F; Tab monitored</div>
+    </div>
+    <button class="btn-camera" id="btn-allow-camera" onclick="requestCamera()">&#x1F4F7; Allow Camera & Continue</button>
+    <div class="camera-denied" id="camera-denied">
+      <strong>&#x1F6AB; Camera access denied.</strong><br>
+      Camera is mandatory for this assessment. Please allow camera access in your browser settings and reload this page.
+    </div>
+  </div>
 </div>
 
 <!-- ASSESSMENT SCREEN -->
@@ -118,7 +176,7 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
     <div class="timer-badge" id="timer">&#x23F1; --:--</div>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-  <div class="violation-bar" id="violation-bar">&#x1F6A8; Tab switch detected! Violations: <strong id="violation-count">0</strong>/2 — Assessment auto-submits at 2</div>
+  <div class="violation-bar" id="violation-bar"></div>
   <div id="question-area"></div>
   <div class="nav-row" id="nav-row">
     <button class="btn-nav btn-prev" id="btn-prev" onclick="prevQuestion()" style="display:none">&#x2190; Previous</button>
@@ -143,9 +201,13 @@ var timerInterval = null;
 var timeLeft = 0;
 var violations = 0;
 var submitted = false;
+var cameraStream = null;
+var snapshots = [];
+var snapshotInterval = null;
+var blurFired = false;
 
 // ═══ LOGIN & VERIFY ═══
-async function startAssessment() {
+async function startLogin() {
     var user = document.getElementById('username').value.trim();
     var pw = document.getElementById('password').value.trim();
     var errEl = document.getElementById('login-error');
@@ -177,13 +239,9 @@ async function startAssessment() {
         document.getElementById('assess-title').textContent = data.candidate_name + ' \u2014 ' + data.role;
         document.getElementById('assess-subtitle').textContent = questions.length + ' questions \u00B7 ' + data.duration_minutes + ' minutes';
 
-        // Switch screens
+        // Go to camera permission screen
         document.getElementById('screen-login').style.display = 'none';
-        document.getElementById('screen-assess').style.display = '';
-
-        renderQuestion();
-        startTimer();
-        setupAntiCheat();
+        document.getElementById('screen-camera').style.display = '';
 
     } catch(e) {
         errEl.textContent = e.message;
@@ -194,16 +252,108 @@ async function startAssessment() {
     btn.textContent = '\u{1F680} Start Assessment';
 }
 
+// ═══ CAMERA PERMISSION ═══
+async function requestCamera() {
+    var btn = document.getElementById('btn-allow-camera');
+    var denied = document.getElementById('camera-denied');
+    btn.disabled = true;
+    btn.textContent = 'Requesting access...';
+    denied.style.display = 'none';
+
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 }, audio: false });
+
+        // Show preview in permission screen
+        var preview = document.getElementById('camera-preview');
+        preview.srcObject = cameraStream;
+        preview.style.display = '';
+        document.getElementById('camera-placeholder').style.display = 'none';
+
+        // Request notification permission (non-blocking)
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Wait 1.5s to let candidate see themselves, then proceed
+        btn.textContent = '\u2705 Camera active! Starting...';
+        setTimeout(function() { startAssessment(); }, 1500);
+
+    } catch(e) {
+        denied.style.display = '';
+        btn.disabled = false;
+        btn.textContent = '\u{1F4F7} Allow Camera & Continue';
+    }
+}
+
+// ═══ START ASSESSMENT ═══
+function startAssessment() {
+    // Hide camera screen, show assessment
+    document.getElementById('screen-camera').style.display = 'none';
+    document.getElementById('screen-assess').style.display = '';
+
+    // Attach camera to floating preview
+    var floatCam = document.getElementById('cam-float');
+    var floatVideo = document.getElementById('cam-float-video');
+    floatCam.style.display = '';
+    floatVideo.srcObject = cameraStream;
+
+    // Start periodic snapshots (every 30s)
+    snapshotInterval = setInterval(takeSnapshot, 30000);
+    takeSnapshot(); // first snapshot immediately
+
+    // Monitor camera stream — if it stops, auto-submit
+    var tracks = cameraStream.getTracks();
+    for (var i = 0; i < tracks.length; i++) {
+        tracks[i].addEventListener('ended', function() {
+            if (!submitted) {
+                showWarning('\u{1F6A8} Camera disconnected! Auto-submitting...');
+                setTimeout(function() { if (!submitted) submitAssessment(); }, 1500);
+            }
+        });
+    }
+
+    renderQuestion();
+    startTimer();
+    setupAntiCheat();
+}
+
+// ═══ SNAPSHOT ═══
+function takeSnapshot() {
+    try {
+        var video = document.getElementById('cam-float-video');
+        var canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 120;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, 160, 120);
+        snapshots.push({
+            time: new Date().toISOString(),
+            image: canvas.toDataURL('image/jpeg', 0.5)
+        });
+    } catch(e) { /* ignore snapshot errors */ }
+}
+
+// ═══ WARNING TOAST ═══
+function showWarning(msg) {
+    var el = document.getElementById('warning-toast');
+    el.textContent = msg;
+    el.className = 'warning-toast show';
+    setTimeout(function() { el.className = 'warning-toast'; }, 4000);
+
+    // Send browser notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        try { new Notification('TalentEdge Assessment', { body: msg, icon: '' }); } catch(e) {}
+    }
+}
+
 // ═══ RENDER QUESTION ═══
 function renderQuestion() {
     if (questions.length === 0) return;
     var q = questions[currentQ];
     var total = questions.length;
 
-    // Progress bar
     document.getElementById('progress-fill').style.width = ((currentQ + 1) / total * 100) + '%';
 
-    // Build question HTML
     var topicHtml = q.topic ? '<span class="q-topic">' + q.topic + '</span>' : '';
     var html = '<div class="question-card">' +
         '<div class="q-header">' +
@@ -222,15 +372,12 @@ function renderQuestion() {
 
     document.getElementById('question-area').innerHTML = html;
 
-    // Navigation buttons
     document.getElementById('btn-prev').style.display = currentQ === 0 ? 'none' : '';
 
     if (currentQ === total - 1) {
-        // Last question: show Submit, hide Next
         document.getElementById('btn-next').style.display = 'none';
         document.getElementById('btn-submit').style.display = '';
     } else {
-        // Not last: show Next, hide Submit
         document.getElementById('btn-next').style.display = '';
         document.getElementById('btn-submit').style.display = 'none';
     }
@@ -242,40 +389,23 @@ function selectOption(idx) {
 }
 
 function nextQuestion() {
-    if (currentQ < questions.length - 1) {
-        currentQ++;
-        renderQuestion();
-        window.scrollTo(0, 0);
-    }
+    if (currentQ < questions.length - 1) { currentQ++; renderQuestion(); window.scrollTo(0, 0); }
 }
 
 function prevQuestion() {
-    if (currentQ > 0) {
-        currentQ--;
-        renderQuestion();
-        window.scrollTo(0, 0);
-    }
+    if (currentQ > 0) { currentQ--; renderQuestion(); window.scrollTo(0, 0); }
 }
 
 // ═══ TIMER ═══
 function startTimer() {
-    var el = document.getElementById('timer');
     updateTimerDisplay();
-
     timerInterval = setInterval(function() {
         timeLeft--;
         updateTimerDisplay();
-
-        if (timeLeft <= 60) {
-            el.className = 'timer-badge danger';
-        } else if (timeLeft <= 300) {
-            el.className = 'timer-badge warning';
-        }
-
-        if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            if (!submitted) submitAssessment();
-        }
+        var el = document.getElementById('timer');
+        if (timeLeft <= 60) el.className = 'timer-badge danger';
+        else if (timeLeft <= 300) el.className = 'timer-badge warning';
+        if (timeLeft <= 0) { clearInterval(timerInterval); if (!submitted) submitAssessment(); }
     }, 1000);
 }
 
@@ -286,78 +416,66 @@ function updateTimerDisplay() {
 }
 
 // ═══ ANTI-CHEAT ═══
+function handleViolation(reason) {
+    if (submitted) return;
+
+    violations++;
+    var vBar = document.getElementById('violation-bar');
+    var camFloat = document.getElementById('cam-float');
+
+    // Flash camera border red
+    camFloat.classList.add('violation');
+    setTimeout(function() { camFloat.classList.remove('violation'); }, 3000);
+
+    // Take snapshot on violation
+    takeSnapshot();
+
+    if (violations === 1) {
+        // FIRST TIME: Warning only
+        vBar.style.display = '';
+        vBar.innerHTML = '\u26A0\uFE0F <strong>WARNING:</strong> ' + reason + ' \u2014 This is your first and only warning. Next violation will auto-submit your assessment.';
+        showWarning('\u26A0\uFE0F WARNING: ' + reason + ' — Next time = auto-submit!');
+    } else {
+        // SECOND TIME: Auto-submit
+        vBar.innerHTML = '\u{1F6A8} Second violation detected! Auto-submitting your assessment...';
+        showWarning('\u{1F6A8} Second violation! Assessment being submitted automatically.');
+        setTimeout(function() { if (!submitted) submitAssessment(); }, 1500);
+    }
+}
+
 function setupAntiCheat() {
 
-    // 1. Tab switch / visibility change
+    // 1. Tab switch (visibilitychange)
     document.addEventListener('visibilitychange', function() {
         if (document.hidden && !submitted) {
-            violations++;
-            var vBar = document.getElementById('violation-bar');
-            vBar.style.display = '';
-            document.getElementById('violation-count').textContent = violations;
-
-            if (violations >= 2) {
-                vBar.innerHTML = '\u{1F6A8} Maximum violations reached! Auto-submitting...';
-                setTimeout(function() {
-                    if (!submitted) submitAssessment();
-                }, 1000);
-            }
+            blurFired = true;
+            handleViolation('Tab switch detected');
+            setTimeout(function() { blurFired = false; }, 500);
         }
     });
 
-    // 2. Block right-click context menu
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        return false;
+    // 2. Window blur (alt-tab etc.) — avoid double-counting with visibilitychange
+    window.addEventListener('blur', function() {
+        if (!submitted && !blurFired) {
+            handleViolation('Window focus lost');
+        }
     });
 
-    // 3. Block keyboard shortcuts
+    // 3. Block right-click
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+    // 4. Block keyboard shortcuts
     document.addEventListener('keydown', function(e) {
-        // Block Ctrl/Cmd + C, V, A, U, S, P
-        if ((e.ctrlKey || e.metaKey) && ['c','v','a','u','s','p'].indexOf(e.key.toLowerCase()) !== -1) {
-            e.preventDefault();
-            return false;
-        }
-        // Block F12 (DevTools)
-        if (e.key === 'F12') {
-            e.preventDefault();
-            return false;
-        }
-        // Block Ctrl+Shift+I (DevTools)
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'i') {
-            e.preventDefault();
-            return false;
-        }
-        // Block Ctrl+Shift+J (Console)
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'j') {
-            e.preventDefault();
-            return false;
-        }
+        if ((e.ctrlKey || e.metaKey) && ['c','v','a','u','s','p'].indexOf(e.key.toLowerCase()) !== -1) { e.preventDefault(); }
+        if (e.key === 'F12') { e.preventDefault(); }
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['i','j','c'].indexOf(e.key.toLowerCase()) !== -1) { e.preventDefault(); }
     });
 
-    // 4. Block copy/paste/cut
+    // 5. Block copy/paste/cut/drag
     document.addEventListener('copy', function(e) { e.preventDefault(); });
     document.addEventListener('paste', function(e) { e.preventDefault(); });
     document.addEventListener('cut', function(e) { e.preventDefault(); });
-
-    // 5. Block drag
     document.addEventListener('dragstart', function(e) { e.preventDefault(); });
-
-    // 6. Warn on window blur (covers alt-tab etc.)
-    window.addEventListener('blur', function() {
-        if (!submitted && !document.hidden) {
-            violations++;
-            var vBar = document.getElementById('violation-bar');
-            vBar.style.display = '';
-            document.getElementById('violation-count').textContent = violations;
-            if (violations >= 2) {
-                vBar.innerHTML = '\u{1F6A8} Maximum violations reached! Auto-submitting...';
-                setTimeout(function() {
-                    if (!submitted) submitAssessment();
-                }, 1000);
-            }
-        }
-    });
 }
 
 // ═══ SUBMIT ═══
@@ -366,6 +484,10 @@ async function submitAssessment() {
     submitted = true;
 
     if (timerInterval) clearInterval(timerInterval);
+    if (snapshotInterval) clearInterval(snapshotInterval);
+
+    // Final snapshot
+    takeSnapshot();
 
     var submitBtn = document.getElementById('btn-submit');
     var nextBtn = document.getElementById('btn-next');
@@ -382,12 +504,21 @@ async function submitAssessment() {
             body: JSON.stringify({
                 token: TOKEN,
                 candidate_id: candidateId,
-                answers: answers
+                answers: answers,
+                violations: violations,
+                snapshots_count: snapshots.length
             })
         });
 
         var data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Submission failed');
+
+        // Stop camera
+        if (cameraStream) {
+            var tracks = cameraStream.getTracks();
+            for (var i = 0; i < tracks.length; i++) tracks[i].stop();
+        }
+        document.getElementById('cam-float').style.display = 'none';
 
         showResult(data);
 
@@ -397,7 +528,7 @@ async function submitAssessment() {
         submitBtn.textContent = '\u2705 Submit Assessment';
         nextBtn.disabled = false;
         prevBtn.disabled = false;
-        alert('Error submitting: ' + e.message + '\n\nPlease try again.');
+        alert('Error: ' + e.message + '\n\nPlease try again.');
     }
 }
 
@@ -410,7 +541,7 @@ function showResult(data) {
     var icon = passed ? '\u{1F389}' : '\u{1F4CA}';
     var title = passed ? 'Congratulations!' : 'Assessment Complete';
     var msg = passed
-        ? 'You passed the assessment! Our recruitment team will contact you shortly about the next steps.'
+        ? 'You passed the assessment! Our recruitment team will contact you shortly about next steps.'
         : 'Thank you for completing the assessment. Our team will review your results and get back to you.';
 
     document.getElementById('result-card').innerHTML =
