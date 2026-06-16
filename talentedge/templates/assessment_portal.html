@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(135deg,#0F172A 0%,#1E293B 30%,#312E81 60%,#4F46E5 100%);display:flex;align-items:center;justify-content:center;color:#1E293B}
+body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(135deg,#0F172A 0%,#1E293B 30%,#312E81 60%,#4F46E5 100%);display:flex;align-items:center;justify-content:center;color:#1E293B;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
 
 /* Login Screen */
 .login-wrapper{width:100%;max-width:460px;padding:2rem}
@@ -20,7 +20,7 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
 .login-card .sub{color:#64748B;font-size:.85rem;margin-bottom:1.5rem}
 .form-group{margin-bottom:1.2rem}
 .form-group label{display:block;font-weight:600;font-size:.85rem;color:#475569;margin-bottom:.4rem}
-.form-group input{width:100%;padding:.75rem 1rem;border:2px solid #E2E8F0;border-radius:12px;font-size:.95rem;font-family:inherit;transition:border-color .2s}
+.form-group input{width:100%;padding:.75rem 1rem;border:2px solid #E2E8F0;border-radius:12px;font-size:.95rem;font-family:inherit;transition:border-color .2s;user-select:text;-webkit-user-select:text}
 .form-group input:focus{outline:none;border-color:#4F46E5;box-shadow:0 0 0 3px rgba(79,70,229,.1)}
 .btn-login{width:100%;padding:.85rem;border:none;border-radius:12px;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;font-size:1rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s}
 .btn-login:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(79,70,229,.3)}
@@ -39,14 +39,14 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
 .timer-badge.danger{background:rgba(239,68,68,.2);border-color:#EF4444;color:#FCA5A5;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 
-.progress-bar{background:rgba(255,255,255,.1);border-radius:8px;height:8px;margin-bottom:1.5rem;overflow:hidden}
+.progress-bar{background:rgba(255,255,255,.1);border-radius:8px;height:8px;margin-bottom:1rem;overflow:hidden}
 .progress-fill{height:100%;background:linear-gradient(90deg,#10B981,#34D399);border-radius:8px;transition:width .5s ease}
 
-.violation-bar{background:rgba(239,68,68,.15);backdrop-filter:blur(10px);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;padding:.5rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:.85rem;font-weight:500;display:none}
+.violation-bar{background:rgba(239,68,68,.15);backdrop-filter:blur(10px);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;padding:.6rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:.85rem;font-weight:600;display:none;text-align:center}
 
 .question-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-radius:16px;padding:2rem;box-shadow:0 10px 30px rgba(0,0,0,.15);margin-bottom:1rem}
-.q-header{display:flex;align-items:center;gap:.8rem;margin-bottom:1.2rem}
-.q-number{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0}
+.q-header{display:flex;align-items:flex-start;gap:.8rem;margin-bottom:1.2rem}
+.q-number{background:linear-gradient(135deg,#4F46E5,#7C3AED);color:white;min-width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0}
 .q-text{font-size:1rem;font-weight:600;color:#1E293B;line-height:1.5}
 .q-topic{display:inline-block;background:#EEF2FF;color:#4F46E5;padding:.15rem .6rem;border-radius:6px;font-size:.7rem;font-weight:600;margin-top:.3rem}
 
@@ -74,11 +74,13 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
 .result-score{font-size:3.5rem;font-weight:900;margin:.5rem 0}
 .result-score.pass{color:#059669}
 .result-score.fail{color:#DC2626}
-.result-label{font-size:1.2rem;font-weight:700;margin-bottom:.5rem}
-.result-detail{color:#64748B;font-size:.9rem;line-height:1.6}
 .result-badge{display:inline-block;padding:.5rem 1.5rem;border-radius:50px;font-weight:700;font-size:.9rem;margin-top:1rem}
 .result-badge.pass{background:#D1FAE5;color:#065F46}
 .result-badge.fail{background:#FEE2E2;color:#991B1B}
+.result-detail{color:#64748B;font-size:.9rem;line-height:1.6;margin-top:1rem}
+
+/* Anti-cheat: disable text selection on assessment */
+#screen-assess{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
 </style>
 </head>
 <body>
@@ -86,11 +88,11 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
 <!-- LOGIN SCREEN -->
 <div id="screen-login" class="login-wrapper">
   <div class="brand">
-    <div class="logo">🚀 <span>TalentEdge</span> AI</div>
+    <div class="logo">&#x1F680; <span>TalentEdge</span> AI</div>
     <p>Candidate Assessment Portal</p>
   </div>
   <div class="login-card">
-    <h2>📝 Start Your Assessment</h2>
+    <h2>&#x1F4DD; Start Your Assessment</h2>
     <p class="sub">Enter the credentials from your invitation email</p>
     <div class="form-group">
       <label>Username</label>
@@ -100,10 +102,10 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
       <label>Password</label>
       <input type="password" id="password" placeholder="Enter your password">
     </div>
-    <button class="btn-login" id="login-btn" onclick="startAssessment()">🚀 Start Assessment</button>
+    <button class="btn-login" id="login-btn" onclick="startAssessment()">&#x1F680; Start Assessment</button>
     <div class="error-msg" id="login-error"></div>
   </div>
-  <p class="footer-note">🔒 Your session is monitored. Do not switch tabs.</p>
+  <p class="footer-note">&#x1F512; Your session is monitored. Tab switching will be flagged.</p>
 </div>
 
 <!-- ASSESSMENT SCREEN -->
@@ -113,14 +115,15 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
       <h2 id="assess-title">Assessment</h2>
       <p id="assess-subtitle"></p>
     </div>
-    <div class="timer-badge" id="timer">⏱ --:--</div>
+    <div class="timer-badge" id="timer">&#x23F1; --:--</div>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-  <div class="violation-bar" id="violation-bar">⚠️ Tab switch detected! Violations: <strong id="violation-count">0</strong>/3</div>
+  <div class="violation-bar" id="violation-bar">&#x1F6A8; Tab switch detected! Violations: <strong id="violation-count">0</strong>/2 — Assessment auto-submits at 2</div>
   <div id="question-area"></div>
-  <div class="nav-row">
-    <button class="btn-nav btn-prev" id="btn-prev" onclick="prevQuestion()">← Previous</button>
-    <button class="btn-nav btn-next" id="btn-next" onclick="nextQuestion()">Next →</button>
+  <div class="nav-row" id="nav-row">
+    <button class="btn-nav btn-prev" id="btn-prev" onclick="prevQuestion()" style="display:none">&#x2190; Previous</button>
+    <button class="btn-nav btn-next" id="btn-next" onclick="nextQuestion()">Next &#x2192;</button>
+    <button class="btn-nav btn-submit" id="btn-submit" onclick="submitAssessment()" style="display:none">&#x2705; Submit Assessment</button>
   </div>
 </div>
 
@@ -132,58 +135,81 @@ body{font-family:'Inter',sans-serif;min-height:100vh;background:linear-gradient(
 
 <script>
 var TOKEN = '{{ token }}';
+var candidateId = '';
 var questions = [];
 var answers = {};
 var currentQ = 0;
 var timerInterval = null;
 var timeLeft = 0;
 var violations = 0;
+var submitted = false;
 
+// ═══ LOGIN & VERIFY ═══
 async function startAssessment() {
     var user = document.getElementById('username').value.trim();
     var pw = document.getElementById('password').value.trim();
     var errEl = document.getElementById('login-error');
     var btn = document.getElementById('login-btn');
 
-    if (!user || !pw) { errEl.textContent = 'Please enter both username and password'; errEl.style.display = ''; return; }
+    if (!user || !pw) {
+        errEl.textContent = 'Please enter both username and password';
+        errEl.style.display = '';
+        return;
+    }
+
     errEl.style.display = 'none';
-    btn.disabled = true; btn.textContent = 'Verifying...';
+    btn.disabled = true;
+    btn.textContent = 'Verifying...';
 
     try {
-        var res = await fetch('/api/assess/verify?token=' + TOKEN + '&username=' + encodeURIComponent(user) + '&password=' + encodeURIComponent(pw));
+        var url = '/api/assess/verify?token=' + encodeURIComponent(TOKEN) +
+                  '&username=' + encodeURIComponent(user) +
+                  '&password=' + encodeURIComponent(pw);
+        var res = await fetch(url);
         var data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Invalid credentials');
 
+        // Store globally
+        candidateId = data.candidate_id;
         questions = data.questions || [];
         timeLeft = (data.duration_minutes || 20) * 60;
 
-        document.getElementById('assess-title').textContent = data.candidate_name + ' — ' + data.role;
-        document.getElementById('assess-subtitle').textContent = questions.length + ' questions · ' + data.duration_minutes + ' minutes';
+        document.getElementById('assess-title').textContent = data.candidate_name + ' \u2014 ' + data.role;
+        document.getElementById('assess-subtitle').textContent = questions.length + ' questions \u00B7 ' + data.duration_minutes + ' minutes';
 
+        // Switch screens
         document.getElementById('screen-login').style.display = 'none';
         document.getElementById('screen-assess').style.display = '';
 
         renderQuestion();
         startTimer();
         setupAntiCheat();
+
     } catch(e) {
         errEl.textContent = e.message;
         errEl.style.display = '';
     }
-    btn.disabled = false; btn.textContent = '🚀 Start Assessment';
+
+    btn.disabled = false;
+    btn.textContent = '\u{1F680} Start Assessment';
 }
 
+// ═══ RENDER QUESTION ═══
 function renderQuestion() {
     if (questions.length === 0) return;
     var q = questions[currentQ];
     var total = questions.length;
 
+    // Progress bar
     document.getElementById('progress-fill').style.width = ((currentQ + 1) / total * 100) + '%';
 
+    // Build question HTML
     var topicHtml = q.topic ? '<span class="q-topic">' + q.topic + '</span>' : '';
     var html = '<div class="question-card">' +
-        '<div class="q-header"><div class="q-number">' + (currentQ + 1) + '</div><div><div class="q-text">' + q.q + '</div>' + topicHtml + '</div></div>' +
-        '<div class="options">';
+        '<div class="q-header">' +
+        '<div class="q-number">' + (currentQ + 1) + '</div>' +
+        '<div><div class="q-text">' + q.q + '</div>' + topicHtml + '</div>' +
+        '</div><div class="options">';
 
     for (var i = 0; i < q.options.length; i++) {
         var sel = answers[currentQ] === i ? ' selected' : '';
@@ -192,20 +218,21 @@ function renderQuestion() {
     }
 
     html += '</div></div>';
-    html += '<div style="text-align:center;color:#94A3B8;font-size:.8rem;margin-top:.5rem">Question ' + (currentQ+1) + ' of ' + total + '</div>';
+    html += '<div style="text-align:center;color:rgba(255,255,255,.5);font-size:.8rem;margin-top:.5rem">Question ' + (currentQ + 1) + ' of ' + total + '</div>';
 
     document.getElementById('question-area').innerHTML = html;
 
+    // Navigation buttons
     document.getElementById('btn-prev').style.display = currentQ === 0 ? 'none' : '';
 
     if (currentQ === total - 1) {
-        document.getElementById('btn-next').className = 'btn-nav btn-submit';
-        document.getElementById('btn-next').textContent = '✅ Submit Assessment';
-        document.getElementById('btn-next').setAttribute('onclick', 'submitAssessment()');
+        // Last question: show Submit, hide Next
+        document.getElementById('btn-next').style.display = 'none';
+        document.getElementById('btn-submit').style.display = '';
     } else {
-        document.getElementById('btn-next').className = 'btn-nav btn-next';
-        document.getElementById('btn-next').textContent = 'Next →';
-        document.getElementById('btn-next').setAttribute('onclick', 'nextQuestion()');
+        // Not last: show Next, hide Submit
+        document.getElementById('btn-next').style.display = '';
+        document.getElementById('btn-submit').style.display = 'none';
     }
 }
 
@@ -215,48 +242,138 @@ function selectOption(idx) {
 }
 
 function nextQuestion() {
-    if (currentQ < questions.length - 1) { currentQ++; renderQuestion(); }
+    if (currentQ < questions.length - 1) {
+        currentQ++;
+        renderQuestion();
+        window.scrollTo(0, 0);
+    }
 }
 
 function prevQuestion() {
-    if (currentQ > 0) { currentQ--; renderQuestion(); }
+    if (currentQ > 0) {
+        currentQ--;
+        renderQuestion();
+        window.scrollTo(0, 0);
+    }
 }
 
+// ═══ TIMER ═══
 function startTimer() {
     var el = document.getElementById('timer');
+    updateTimerDisplay();
+
     timerInterval = setInterval(function() {
         timeLeft--;
-        var m = Math.floor(timeLeft / 60);
-        var s = timeLeft % 60;
-        el.textContent = '⏱ ' + m + ':' + (s < 10 ? '0' : '') + s;
+        updateTimerDisplay();
 
-        if (timeLeft <= 60) { el.className = 'timer-badge danger'; }
-        else if (timeLeft <= 300) { el.className = 'timer-badge warning'; }
+        if (timeLeft <= 60) {
+            el.className = 'timer-badge danger';
+        } else if (timeLeft <= 300) {
+            el.className = 'timer-badge warning';
+        }
 
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            submitAssessment();
+            if (!submitted) submitAssessment();
         }
     }, 1000);
 }
 
+function updateTimerDisplay() {
+    var m = Math.floor(timeLeft / 60);
+    var s = timeLeft % 60;
+    document.getElementById('timer').textContent = '\u23F1 ' + m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+// ═══ ANTI-CHEAT ═══
 function setupAntiCheat() {
+
+    // 1. Tab switch / visibility change
     document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
+        if (document.hidden && !submitted) {
             violations++;
-            document.getElementById('violation-bar').style.display = '';
+            var vBar = document.getElementById('violation-bar');
+            vBar.style.display = '';
             document.getElementById('violation-count').textContent = violations;
-            if (violations >= 3) {
-                submitAssessment();
+
+            if (violations >= 2) {
+                vBar.innerHTML = '\u{1F6A8} Maximum violations reached! Auto-submitting...';
+                setTimeout(function() {
+                    if (!submitted) submitAssessment();
+                }, 1000);
+            }
+        }
+    });
+
+    // 2. Block right-click context menu
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    });
+
+    // 3. Block keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Block Ctrl/Cmd + C, V, A, U, S, P
+        if ((e.ctrlKey || e.metaKey) && ['c','v','a','u','s','p'].indexOf(e.key.toLowerCase()) !== -1) {
+            e.preventDefault();
+            return false;
+        }
+        // Block F12 (DevTools)
+        if (e.key === 'F12') {
+            e.preventDefault();
+            return false;
+        }
+        // Block Ctrl+Shift+I (DevTools)
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'i') {
+            e.preventDefault();
+            return false;
+        }
+        // Block Ctrl+Shift+J (Console)
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'j') {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // 4. Block copy/paste/cut
+    document.addEventListener('copy', function(e) { e.preventDefault(); });
+    document.addEventListener('paste', function(e) { e.preventDefault(); });
+    document.addEventListener('cut', function(e) { e.preventDefault(); });
+
+    // 5. Block drag
+    document.addEventListener('dragstart', function(e) { e.preventDefault(); });
+
+    // 6. Warn on window blur (covers alt-tab etc.)
+    window.addEventListener('blur', function() {
+        if (!submitted && !document.hidden) {
+            violations++;
+            var vBar = document.getElementById('violation-bar');
+            vBar.style.display = '';
+            document.getElementById('violation-count').textContent = violations;
+            if (violations >= 2) {
+                vBar.innerHTML = '\u{1F6A8} Maximum violations reached! Auto-submitting...';
+                setTimeout(function() {
+                    if (!submitted) submitAssessment();
+                }, 1000);
             }
         }
     });
 }
 
+// ═══ SUBMIT ═══
 async function submitAssessment() {
+    if (submitted) return;
+    submitted = true;
+
     if (timerInterval) clearInterval(timerInterval);
-    document.getElementById('btn-next').disabled = true;
-    document.getElementById('btn-next').textContent = 'Submitting...';
+
+    var submitBtn = document.getElementById('btn-submit');
+    var nextBtn = document.getElementById('btn-next');
+    var prevBtn = document.getElementById('btn-prev');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    nextBtn.disabled = true;
+    prevBtn.disabled = true;
 
     try {
         var res = await fetch('/api/assess/submit', {
@@ -264,32 +381,45 @@ async function submitAssessment() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 token: TOKEN,
-                candidate_id: document.getElementById('assess-title').textContent.split(' — ')[0].trim().replace(/.*CAND/, 'CAND'),
-                answers: answers,
-            }),
+                candidate_id: candidateId,
+                answers: answers
+            })
         });
+
         var data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Submit failed');
+        if (!res.ok) throw new Error(data.detail || 'Submission failed');
+
         showResult(data);
+
     } catch(e) {
-        alert('Error: ' + e.message);
+        submitted = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = '\u2705 Submit Assessment';
+        nextBtn.disabled = false;
+        prevBtn.disabled = false;
+        alert('Error submitting: ' + e.message + '\n\nPlease try again.');
     }
 }
 
+// ═══ RESULTS ═══
 function showResult(data) {
     document.getElementById('screen-assess').style.display = 'none';
     document.getElementById('screen-result').style.display = '';
 
     var passed = data.decision === 'PASS';
-    var icon = passed ? '🎉' : '📊';
-    var msg = passed ? 'Congratulations! You passed the assessment.' : 'Thank you for completing the assessment.';
+    var icon = passed ? '\u{1F389}' : '\u{1F4CA}';
+    var title = passed ? 'Congratulations!' : 'Assessment Complete';
+    var msg = passed
+        ? 'You passed the assessment! Our recruitment team will contact you shortly about the next steps.'
+        : 'Thank you for completing the assessment. Our team will review your results and get back to you.';
 
     document.getElementById('result-card').innerHTML =
         '<div class="result-icon">' + icon + '</div>' +
-        '<div class="result-score ' + (passed?'pass':'fail') + '">' + data.score_percent + '%</div>' +
-        '<div class="result-label">' + data.correct + ' out of ' + data.total + ' correct</div>' +
-        '<div class="result-badge ' + (passed?'pass':'fail') + '">' + data.decision + '</div>' +
-        '<p class="result-detail" style="margin-top:1.5rem">' + msg + '</p>';
+        '<div class="result-score ' + (passed ? 'pass' : 'fail') + '">' + data.score_percent + '%</div>' +
+        '<div style="font-size:1.2rem;font-weight:700;color:#1E293B">' + title + '</div>' +
+        '<div style="margin:.5rem 0"><strong>' + data.correct + '</strong> out of <strong>' + data.total + '</strong> correct</div>' +
+        '<div class="result-badge ' + (passed ? 'pass' : 'fail') + '">' + data.decision + '</div>' +
+        '<p class="result-detail">' + msg + '</p>';
 }
 </script>
 </body>
